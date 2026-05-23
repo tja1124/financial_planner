@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Debt, DebtStrategy } from '../types';
 import { generateId } from '../utils/storage';
 import { formatCurrency, projectDebtPayoff } from '../utils/calculations';
@@ -20,8 +20,16 @@ import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { FormAlerts } from '../components/FormAlerts';
 import { ChartContainer } from '../components/ChartContainer';
+import { ChartTooltip } from '../components/charts/ChartTooltip';
+import { DebtChartFilter } from '../components/charts/DebtChartFilter';
 import { useAppActions } from '../context/AppActionsContext';
 import { useChartTheme } from '../hooks/useChartTheme';
+import {
+  buildMultiDebtChartRows,
+  buildStrategyComparisonRows,
+  debtChartKey,
+  getDebtTimelineSeries,
+} from '../utils/debtChartData';
 import {
   LineChart,
   Line,
@@ -52,7 +60,26 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedDebtId, setSelectedDebtId] = useState<string | null>(null);
   const [compareView, setCompareView] = useState(true);
+  const [debtChartView, setDebtChartView] = useState(true);
+  const [visibleDebtIds, setVisibleDebtIds] = useState<Set<string>>(() => new Set());
   const [validation, setValidation] = useState(emptyValidation());
+
+  useEffect(() => {
+    setVisibleDebtIds((prev) => {
+      if (debts.length === 0) return new Set();
+      const existing = new Set(debts.map((d) => d.id));
+      if (prev.size === 0) return existing;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (existing.has(id)) next.add(id);
+      }
+      for (const d of debts) {
+        if (!prev.has(d.id)) next.add(d.id);
+      }
+      if (next.size === 0) return existing;
+      return next;
+    });
+  }, [debts]);
 
   const strategyResults = useMemo(
     () => STRATEGIES.map((s) => simulateDebtStrategy(debts, s)),
@@ -66,25 +93,26 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
     );
   }, [strategyResults]);
 
-  const comparisonChartData = useMemo(() => {
-    const maxMonths = Math.max(...strategyResults.map((r) => r.payoffMonths), 1);
-    const step = Math.max(1, Math.floor(maxMonths / 24));
-    const points: Record<string, number | string>[] = [];
+  const comparisonChartData = useMemo(
+    () => buildStrategyComparisonRows(strategyResults),
+    [strategyResults],
+  );
 
-    for (let m = 0; m <= maxMonths; m += step) {
-      const point: Record<string, number | string> = { month: m };
-      for (const result of strategyResults) {
-        let balance = result.timeline[0]?.totalBalance ?? 0;
-        for (const t of result.timeline) {
-          if (t.month <= m) balance = t.totalBalance;
-        }
-        if (m > result.payoffMonths) balance = 0;
-        point[result.strategy] = balance;
-      }
-      points.push(point);
-    }
-    return points;
-  }, [strategyResults]);
+  const debtIndexById = useMemo(
+    () => new Map(debts.map((d, i) => [d.id, i])),
+    [debts],
+  );
+
+  const perDebtChartData = useMemo(() => {
+    const visible = debts.filter((d) => visibleDebtIds.has(d.id));
+    const series = visible.map((d) => getDebtTimelineSeries(d));
+    return buildMultiDebtChartRows(series);
+  }, [debts, visibleDebtIds]);
+
+  const visibleDebtsForChart = useMemo(
+    () => debts.filter((d) => visibleDebtIds.has(d.id)),
+    [debts, visibleDebtIds],
+  );
 
   function handleAdd() {
     const result = validateDebt(form);
@@ -130,13 +158,10 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
   const payoffRemMonths = payoffMonths % 12;
   const totalInterest = payoffData.reduce((s, m) => s + m.interest, 0);
 
-  const singleChartData = payoffData
-    .filter(
-      (_, i) =>
-        i % Math.max(1, Math.floor(payoffData.length / 24)) === 0 ||
-        i === payoffData.length - 1,
-    )
-    .map((m) => ({ month: m.month, balance: Math.round(m.balance) }));
+  const singleChartData = useMemo(() => {
+    if (!selectedDebt) return [];
+    return buildMultiDebtChartRows([getDebtTimelineSeries(selectedDebt)]);
+  }, [selectedDebt]);
 
   return (
     <div className="page-stack">
@@ -318,8 +343,12 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                   <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `Mo ${v}`} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), '']} contentStyle={chart.tooltip.contentStyle} labelStyle={chart.tooltip.labelStyle} />
-                  <Legend wrapperStyle={chart.legendStyle} />
+                  <Tooltip
+                    content={
+                      <ChartTooltip formatLabel={(l) => `Month ${l}`} />
+                    }
+                  />
+                  <Legend wrapperStyle={chart.legendStyle} iconType="circle" iconSize={8} />
                   {STRATEGIES.map((s, i) => (
                     <Line
                       key={s}
@@ -328,6 +357,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                       stroke={chart.series.lines[i]}
                       strokeWidth={2}
                       dot={false}
+                      connectNulls={false}
                       name={STRATEGY_LABELS[s]}
                     />
                   ))}
@@ -336,6 +366,69 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
               </ChartContainer>
             )}
           </Card>
+
+          {debts.length > 1 && (
+            <Card>
+              <CardHeader
+                title="Debt Payoff Over Time"
+                subtitle="Compare individual debt balances (custom payments per debt)"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => setDebtChartView(!debtChartView)}
+                    className="text-xs font-medium text-indigo-600 dark:text-indigo-400 cursor-pointer"
+                  >
+                    {debtChartView ? 'Hide chart' : 'Show chart'}
+                  </button>
+                }
+              />
+              <DebtChartFilter
+                debts={debts}
+                visibleIds={visibleDebtIds}
+                onChange={setVisibleDebtIds}
+                debtColor={chart.debtColor}
+              />
+              {debtChartView && visibleDebtsForChart.length > 0 && perDebtChartData.length > 0 && (
+                <ChartContainer height={280} className="mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={perDebtChartData} margin={{ top: 8, right: 8, left: -4, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+                      <XAxis
+                        dataKey="month"
+                        tick={{ fontSize: 11, fill: chart.tick }}
+                        tickFormatter={(v) => `Mo ${v}`}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: chart.tick }}
+                        tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip content={<ChartTooltip formatLabel={(l) => `Month ${l}`} />} />
+                      <Legend wrapperStyle={chart.legendStyle} iconType="circle" iconSize={8} />
+                      {visibleDebtsForChart.map((debt) => {
+                        const idx = debtIndexById.get(debt.id) ?? 0;
+                        return (
+                          <Line
+                            key={debt.id}
+                            type="monotone"
+                            dataKey={debtChartKey(debt.id)}
+                            stroke={chart.debtColor(idx)}
+                            strokeWidth={2}
+                            dot={false}
+                            connectNulls={false}
+                            name={debt.name}
+                          />
+                        );
+                      })}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              )}
+            </Card>
+          )}
 
           {selectedDebt && payoffData.length > 0 && (
             <Card>
@@ -353,8 +446,16 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                   <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Balance']} contentStyle={chart.tooltip.contentStyle} labelStyle={chart.tooltip.labelStyle} />
-                  <Line type="monotone" dataKey="balance" stroke={chart.series.lines[0]} strokeWidth={2.5} dot={false} name="Balance" />
+                  <Tooltip content={<ChartTooltip formatLabel={(l) => `Month ${l}`} />} />
+                  <Line
+                    type="monotone"
+                    dataKey={debtChartKey(selectedDebt.id)}
+                    stroke={chart.debtColor(debtIndexById.get(selectedDebt.id) ?? 0)}
+                    strokeWidth={2.5}
+                    dot={false}
+                    connectNulls={false}
+                    name="Balance"
+                  />
                 </LineChart>
               </ResponsiveContainer>
               </ChartContainer>

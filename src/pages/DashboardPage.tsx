@@ -11,6 +11,8 @@ import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { RecommendationCard } from '../components/RecommendationCard';
 import { ChartContainer } from '../components/ChartContainer';
+import { ChartTooltip } from '../components/charts/ChartTooltip';
+import { PieChartTooltip } from '../components/charts/PieChartTooltip';
 import { useChartTheme } from '../hooks/useChartTheme';
 import {
   PieChart,
@@ -61,7 +63,12 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
     acc[e.category] = (acc[e.category] ?? 0) + e.amount;
     return acc;
   }, {});
-  const expensePieData = Object.entries(categoryData).map(([name, value]) => ({ name, value }));
+  const expenseTotal = Object.values(categoryData).reduce((s, v) => s + v, 0);
+  const expensePieData = Object.entries(categoryData).map(([name, value]) => ({
+    name,
+    value,
+    total: expenseTotal,
+  }));
 
   const budgetBarData = [
     { name: 'Income', amount: totalMonthlyIncome, fill: chart.series.income },
@@ -164,14 +171,10 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
             <XAxis dataKey="label" tick={{ fontSize: 10, fill: chart.tick }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
             <Tooltip
-              formatter={(v, name) => [formatCurrency(Number(v)), String(name)]}
-              labelFormatter={(l) => l}
-              contentStyle={chart.tooltip.contentStyle}
-              labelStyle={chart.tooltip.labelStyle}
-              itemStyle={chart.tooltip.itemStyle}
+              content={<ChartTooltip formatLabel={(l) => String(l)} />}
               cursor={{ fill: chart.cursor }}
             />
-            <Legend wrapperStyle={chart.legendStyle} />
+            <Legend wrapperStyle={chart.legendStyle} iconType="circle" iconSize={8} />
             <Bar dataKey="income" fill={chart.series.income} name="Income" radius={[4, 4, 0, 0]} />
             <Bar dataKey="expenses" fill={chart.series.expenses} name="Expenses" radius={[4, 4, 0, 0]} />
             <Bar dataKey="debtPayments" fill={chart.series.debt} name="Debt" radius={[4, 4, 0, 0]} />
@@ -214,7 +217,7 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
                 <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} contentStyle={chart.tooltip.contentStyle} labelStyle={chart.tooltip.labelStyle} cursor={{ fill: chart.cursor }} />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: chart.cursor }} />
                 <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
                   {budgetBarData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
@@ -242,11 +245,11 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
                   dataKey="value"
                 >
                   {expensePieData.map((_, i) => (
-                    <Cell key={i} fill={chart.series.pie[i % chart.series.pie.length]} />
+                    <Cell key={i} fill={chart.pieColor(i)} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} contentStyle={chart.tooltip.contentStyle} labelStyle={chart.tooltip.labelStyle} />
-                <Legend wrapperStyle={chart.legendStyle} />
+                <Tooltip content={<PieChartTooltip />} />
+                <Legend wrapperStyle={chart.legendStyle} iconType="circle" iconSize={8} />
               </PieChart>
             </ResponsiveContainer>
             </ChartContainer>

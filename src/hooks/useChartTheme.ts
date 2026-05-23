@@ -9,7 +9,8 @@ const CHART_SERIES_LIGHT = {
   leftover: '#3b82f6',
   cumulative: '#2563eb',
   lines: ['#6366f1', '#10b981', '#f59e0b'] as const,
-  pie: ['#6366f1', '#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'],
+  pie: ['#4f46e5', '#059669', '#dc2626', '#0284c7', '#d97706', '#7c3aed', '#db2777', '#0d9488', '#ea580c'],
+  debtLines: ['#4f46e5', '#059669', '#dc2626', '#0284c7', '#d97706', '#7c3aed', '#db2777', '#0d9488'],
 };
 
 const CHART_SERIES_DARK = {
@@ -20,7 +21,8 @@ const CHART_SERIES_DARK = {
   leftover: '#60a5fa',
   cumulative: '#93c5fd',
   lines: ['#a5b4fc', '#4ade80', '#fbbf24'] as const,
-  pie: ['#a5b4fc', '#fbbf24', '#fb7185', '#4ade80', '#60a5fa', '#c084fc', '#f472b6', '#2dd4bf'],
+  pie: ['#818cf8', '#4ade80', '#fb7185', '#38bdf8', '#fbbf24', '#c084fc', '#f472b6', '#2dd4bf', '#fb923c'],
+  debtLines: ['#818cf8', '#4ade80', '#fb7185', '#38bdf8', '#fbbf24', '#c084fc', '#f472b6', '#2dd4bf'],
 };
 
 export function useChartTheme() {
@@ -63,6 +65,8 @@ export function useChartTheme() {
         fontWeight: 500,
       },
       cursor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.04)',
+      debtColor: (index: number) => series.debtLines[index % series.debtLines.length],
+      pieColor: (index: number) => series.pie[index % series.pie.length],
     }),
     [isDark, series],
   );
