@@ -19,6 +19,11 @@ import { Input } from '../components/Input';
 import { PageHeader } from '../components/PageHeader';
 import { EMPTY_STATE_ICONS } from '../components/icons';
 import { CollapsibleSection } from '../components/CollapsibleSection';
+import {
+  CrudPageLayout,
+  crudFormCardClass,
+  crudListItemClass,
+} from '../components/CrudPageLayout';
 import { EmptyState } from '../components/EmptyState';
 import { FormAlerts } from '../components/FormAlerts';
 import { ChartContainer } from '../components/ChartContainer';
@@ -145,6 +150,12 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
     setValidation(emptyValidation());
   }
 
+  function handleCancelEdit() {
+    setEditingId(null);
+    setForm(emptyDebt());
+    setValidation(emptyValidation());
+  }
+
   function handleDelete(id: string) {
     const item = debts.find((d) => d.id === id);
     const snapshot = data;
@@ -162,10 +173,13 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
         subtitle="Compare snowball vs avalanche payoff strategies and track individual debts."
       />
 
-      <Card>
+      <CrudPageLayout
+        editingActive={!!editingId}
+        form={
+      <Card className={crudFormCardClass(!!editingId)}>
         <CardHeader title={editingId ? 'Edit Debt' : 'Add Debt'} />
         <FormAlerts validation={validation} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4">
           <Input
             label="Debt name"
             placeholder="e.g. Credit Card, Car Loan"
@@ -217,25 +231,18 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
         <p className="text-xs text-muted mt-3">
           Extra payments apply to the Custom strategy. Snowball and avalanche pool all extras automatically.
         </p>
-        <div className="flex flex-col sm:flex-row gap-2 mt-5">
+        <div className="flex flex-col gap-2 mt-4">
           <Button onClick={handleAdd}>{editingId ? 'Save Changes' : '+ Add Debt'}</Button>
           {editingId && (
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setEditingId(null);
-                setForm(emptyDebt());
-                setValidation(emptyValidation());
-              }}
-            >
-              Cancel
+            <Button variant="secondary" onClick={handleCancelEdit}>
+              Cancel editing
             </Button>
           )}
         </div>
       </Card>
-
-      {debts.length > 0 && (
-        <>
+        }
+        list={
+      debts.length > 0 ? (
           <Card>
             <CardHeader
               title="Your Debts"
@@ -249,8 +256,12 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
               {debts.map((debt) => {
                 const monthly = debt.minimumPayment + debt.extraPayment;
                 const isSelected = selectedDebt?.id === debt.id;
+                const isEditing = editingId === debt.id;
                 return (
-                  <div key={debt.id} className="py-3">
+                  <div
+                    key={debt.id}
+                    className={crudListItemClass(isEditing, 'py-3')}
+                  >
                     <CollapsibleSection
                       title={debt.name}
                       summary={`${formatCurrency(debt.balance)} · ${formatCurrency(monthly)}/mo`}
@@ -313,8 +324,20 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
               })}
             </div>
           </Card>
-
-          <Card>
+      ) : (
+        <Card>
+          <EmptyState
+            icon={EMPTY_STATE_ICONS.debt}
+            title="No debts tracked"
+            description="Add your debts to compare snowball, avalanche, and custom payoff strategies."
+          />
+        </Card>
+      )
+        }
+        after={
+      debts.length > 0 ? (
+        <>
+          <Card className="mt-4 lg:col-span-full">
             <CardHeader
               title="Strategy Comparison"
               subtitle="Same debts, different payoff methods"
@@ -402,7 +425,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             )}
             </Card>
 
-          <Card>
+          <Card className="mt-4">
               <CardHeader
                 title="Debt Payoff Over Time"
                 subtitle="Compare individual debt balances (custom payments per debt)"
@@ -463,17 +486,9 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
               )}
             </Card>
         </>
-      )}
-
-      {debts.length === 0 && (
-        <Card>
-          <EmptyState
-            icon={EMPTY_STATE_ICONS.debt}
-            title="No debts tracked"
-            description="Add your debts to compare snowball, avalanche, and custom payoff strategies."
-          />
-        </Card>
-      )}
+      ) : null
+        }
+      />
     </div>
   );
 }

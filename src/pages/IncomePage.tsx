@@ -24,6 +24,11 @@ import { PageHeader } from '../components/PageHeader';
 import { FormAlerts } from '../components/FormAlerts';
 import { EmptyState } from '../components/EmptyState';
 import { CollapsibleSection } from '../components/CollapsibleSection';
+import {
+  CrudPageLayout,
+  crudFormCardClass,
+  crudListItemClass,
+} from '../components/CrudPageLayout';
 import { useAppActions } from '../context/AppActionsContext';
 import { EMPTY_STATE_ICONS } from '../components/icons';
 
@@ -145,12 +150,14 @@ export function IncomePage({ income, onChange }: Props) {
         subtitle="Add all sources of income. Gross amounts are converted to estimated take-home for your plan."
       />
 
-      {/* ── Add / Edit Form ─────────────────────────────────────────────── */}
-      <Card data-tour="income-form">
+      <CrudPageLayout
+        editingActive={!!editingId}
+        form={
+      <Card data-tour="income-form" className={crudFormCardClass(!!editingId)}>
         <CardHeader title={editingId ? 'Edit Income Source' : 'Add Income Source'} />
         <FormAlerts validation={validation} />
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4">
           <Input
             label="Source name"
             placeholder="e.g. Salary, Freelance"
@@ -216,7 +223,7 @@ export function IncomePage({ income, onChange }: Props) {
             defaultExpanded={false}
             bordered={true}
           >
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-1">
+            <div className="grid grid-cols-2 gap-3 mt-1">
               <Input
                 label="Federal rate (%)"
                 type="number"
@@ -318,18 +325,18 @@ export function IncomePage({ income, onChange }: Props) {
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-2 mt-5">
+        <div className="flex flex-col gap-2 mt-4">
           <Button onClick={handleAdd}>{editingId ? 'Save Changes' : '+ Add Source'}</Button>
           {editingId && (
             <Button variant="secondary" onClick={handleCancel}>
-              Cancel
+              Cancel editing
             </Button>
           )}
         </div>
       </Card>
-
-      {/* ── Income Sources list ──────────────────────────────────────────── */}
-      {income.length > 0 ? (
+        }
+        list={
+      income.length > 0 ? (
         <Card>
           <CardHeader
             title="Income Sources"
@@ -347,7 +354,10 @@ export function IncomePage({ income, onChange }: Props) {
               return (
                 <div
                   key={source.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between py-4 gap-3"
+                  className={crudListItemClass(
+                    editingId === source.id,
+                    'flex flex-col sm:flex-row sm:items-center justify-between py-4 gap-3',
+                  )}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -395,11 +405,11 @@ export function IncomePage({ income, onChange }: Props) {
             description="Add your salary, freelance work, or other income to power your dashboard and forecasts."
           />
         </Card>
-      )}
-
-      {/* ── Income Summary card (only when any source is gross) ───────────── */}
-      {hasGross && income.length > 0 && (
-        <Card>
+      )
+        }
+        after={
+      hasGross && income.length > 0 ? (
+        <Card className="mt-4">
           <CardHeader title="Income Summary" />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
             <div>
@@ -436,7 +446,9 @@ export function IncomePage({ income, onChange }: Props) {
             </div>
           </div>
         </Card>
-      )}
+      ) : null
+        }
+      />
     </div>
   );
 }

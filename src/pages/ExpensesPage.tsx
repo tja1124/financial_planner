@@ -20,6 +20,11 @@ import { PageHeader } from '../components/PageHeader';
 import { FormAlerts } from '../components/FormAlerts';
 import { EmptyState } from '../components/EmptyState';
 import { CollapsibleSection } from '../components/CollapsibleSection';
+import {
+  CrudPageLayout,
+  crudFormCardClass,
+  crudListItemClass,
+} from '../components/CrudPageLayout';
 import { useAppActions } from '../context/AppActionsContext';
 import { AppIcon, EXPENSE_CATEGORY_ICONS, EMPTY_STATE_ICONS, IconTile } from '../components/icons';
 import { Calendar, CheckCircle2, X } from 'lucide-react';
@@ -261,24 +266,25 @@ export function ExpensesPage({ expenses, onChange }: Props) {
         subtitle="Track monthly bills and planned one-time expenses like vacations or weddings."
       />
 
-      <Card data-tour="expense-mode-toggle">
-        <div className="mb-5">
-          <CardHeader title={editingId ? 'Edit Expense' : 'Add Expense'} />
+      <CrudPageLayout
+        editingActive={!!editingId}
+        form={
+      <Card data-tour="expense-mode-toggle" className={crudFormCardClass(!!editingId)}>
+        <CardHeader title={editingId ? 'Edit Expense' : 'Add Expense'} />
 
-          <div className="flex gap-2">
-            <ModeChip active={mode === 'recurring'} onClick={() => switchMode('recurring')}>
-              Monthly recurring
-            </ModeChip>
-            <ModeChip active={mode === 'planned'} onClick={() => switchMode('planned')}>
-              Planned by date
-            </ModeChip>
-          </div>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <ModeChip active={mode === 'recurring'} onClick={() => switchMode('recurring')}>
+            Monthly recurring
+          </ModeChip>
+          <ModeChip active={mode === 'planned'} onClick={() => switchMode('planned')}>
+            Planned by date
+          </ModeChip>
         </div>
 
         <FormAlerts validation={validation} />
 
         {mode === 'recurring' && form.mode === 'recurring' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
             <Input
               label="Expense name"
               placeholder="e.g. Rent, Netflix"
@@ -325,10 +331,10 @@ export function ExpensesPage({ expenses, onChange }: Props) {
 
         {mode === 'planned' && form.mode === 'planned' && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 gap-3 sm:gap-4">
               <Input
                 label="Expense name"
-                placeholder="e.g. Wedding, Car repair"
+                placeholder="e.g. Vacation, Car repair"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
@@ -392,17 +398,18 @@ export function ExpensesPage({ expenses, onChange }: Props) {
           </>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-2 mt-5">
+        <div className="flex flex-col gap-2 mt-4">
           <Button onClick={handleAdd}>{editingId ? 'Save Changes' : '+ Add Expense'}</Button>
           {editingId && (
             <Button variant="secondary" onClick={handleCancel}>
-              Cancel
+              Cancel editing
             </Button>
           )}
         </div>
       </Card>
-
-      {expenses.length > 0 ? (
+        }
+        list={
+      expenses.length > 0 ? (
         <Card>
           <CardHeader
             title="Expenses"
@@ -443,6 +450,7 @@ export function ExpensesPage({ expenses, onChange }: Props) {
                 <PlannedExpenseRow
                   key={expense.id}
                   expense={expense}
+                  isActive={editingId === expense.id}
                   onEdit={() => handleEdit(expense)}
                   onDelete={() => handleDelete(expense.id)}
                   onContribute={(amt) => handleContribution(expense.id, amt)}
@@ -451,6 +459,7 @@ export function ExpensesPage({ expenses, onChange }: Props) {
                 <RecurringExpenseRow
                   key={expense.id}
                   expense={expense}
+                  isActive={editingId === expense.id}
                   onEdit={() => handleEdit(expense)}
                   onDelete={() => handleDelete(expense.id)}
                 />
@@ -466,7 +475,9 @@ export function ExpensesPage({ expenses, onChange }: Props) {
             description="Add monthly bills, or a planned expense like a wedding or vacation with a target date."
           />
         </Card>
-      )}
+      )
+        }
+      />
     </div>
   );
 }
@@ -499,15 +510,22 @@ function ModeChip({
 
 function RecurringExpenseRow({
   expense,
+  isActive,
   onEdit,
   onDelete,
 }: {
   expense: Expense;
+  isActive: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between py-4 gap-3">
+    <div
+      className={crudListItemClass(
+        isActive,
+        'flex flex-col sm:flex-row sm:items-center justify-between py-4 gap-3',
+      )}
+    >
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <IconTile icon={EXPENSE_CATEGORY_ICONS[expense.category]} variant="muted" size="sm" />
         <div className="min-w-0">
@@ -541,11 +559,13 @@ function RecurringExpenseRow({
 
 function PlannedExpenseRow({
   expense,
+  isActive,
   onEdit,
   onDelete,
   onContribute,
 }: {
   expense: Expense;
+  isActive: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onContribute: (amount: number) => void;
@@ -566,7 +586,7 @@ function PlannedExpenseRow({
     : '';
 
   return (
-    <div className="py-4">
+    <div className={crudListItemClass(isActive, 'py-4')}>
       <div className="flex items-start gap-3">
         <IconTile
           icon={EXPENSE_CATEGORY_ICONS[expense.category]}

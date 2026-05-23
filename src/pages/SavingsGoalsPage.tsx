@@ -159,7 +159,7 @@ export function SavingsGoalsPage({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
             <Input
               label="Goal name"
-              placeholder="e.g. Vacation, Wedding"
+              placeholder="e.g. Vacation, Home down payment"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
@@ -329,7 +329,7 @@ export function SavingsGoalsPage({
           <EmptyState
             icon={EMPTY_STATE_ICONS.savings}
             title="No optional goals yet"
-            description="Add a vacation, wedding, or purchase goal with a target date. Your emergency fund stays separate above."
+            description="Add a vacation, major purchase, or other dated goal. Your emergency fund stays separate above."
           />
         </Card>
       )}
