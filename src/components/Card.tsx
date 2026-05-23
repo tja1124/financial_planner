@@ -1,15 +1,21 @@
 import React from 'react';
 
-interface CardProps {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   className?: string;
   padding?: 'default' | 'none';
 }
 
-export function Card({ children, className = '', padding = 'default' }: CardProps) {
+export function Card({
+  children,
+  className = '',
+  padding = 'default',
+  ...rest
+}: CardProps) {
   return (
     <div
       className={`surface-card ${padding === 'default' ? 'p-6 sm:p-7' : ''} ${className}`}
+      {...rest}
     >
       {children}
     </div>

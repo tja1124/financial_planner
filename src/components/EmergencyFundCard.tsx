@@ -52,7 +52,10 @@ export function EmergencyFundCard({
     <section className="emergency-fund-card overflow-hidden">
       <div className="emergency-fund-card__edge" aria-hidden />
       <div className="p-5 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
+        <div
+          data-tour="emergency-fund-card"
+          className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5"
+        >
           <div>
             <div className="flex items-center gap-2.5 flex-wrap mb-1">
               <IconTile icon={Shield} variant="cyan" size="sm" />

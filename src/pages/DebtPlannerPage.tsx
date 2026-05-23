@@ -314,9 +314,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             </div>
           </Card>
 
-          <div data-tour="debt-strategy">
-          <div data-tour="debt-strategy-card">
-          <Card>
+          <Card data-tour="debt-strategy-card">
             <CardHeader
               title="Strategy Comparison"
               subtitle="Same debts, different payoff methods"
@@ -400,7 +398,6 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
               </ChartContainer>
             )}
             </Card>
-          </div>
 
           <Card>
               <CardHeader
@@ -462,7 +459,6 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                 </ChartContainer>
               )}
             </Card>
-          </div>
         </>
       )}
 

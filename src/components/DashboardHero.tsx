@@ -33,6 +33,7 @@ export function DashboardHero({
 
   return (
     <section
+      data-tour="dashboard-hero"
       className={`dashboard-hero surface-card overflow-hidden ${
         isOnTrack ? 'dashboard-hero--positive' : 'dashboard-hero--caution'
       }`}

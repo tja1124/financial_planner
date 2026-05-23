@@ -12,73 +12,89 @@ const TOUR_STEPS: {
   element: string;
   title: string;
   description: string;
-  side?: Side;
-  align?: Align;
+  side: Side;
+  align: Align;
+  popoverOffset?: number;
 }[] = [
   {
     page: 'dashboard',
     element: '[data-tour="dashboard-hero"]',
-    title: 'Start with your monthly picture',
+    title: 'Your monthly picture',
     description:
-      'See your net monthly cashflow, weekly flex, savings rate, debt timeline, and emergency runway at a glance.',
+      'Track your monthly net position and weekly flex after obligations.',
     side: 'bottom',
-    align: 'start',
+    align: 'center',
+    popoverOffset: 16,
   },
   {
     page: 'dashboard',
     element: '[data-tour="insights-section"]',
-    title: 'Review smart insights',
+    title: 'Smart insights',
     description:
-      'The app flags the highest-priority actions and lets you acknowledge items once handled.',
-    side: 'top',
+      'Review prioritized recommendations and acknowledge items once handled.',
+    side: 'bottom',
     align: 'start',
+    popoverOffset: 14,
   },
   {
     page: 'income',
     element: '[data-tour="income-form"]',
     title: 'Add your income',
     description:
-      'Enter recurring income so the app can calculate monthly cashflow and available flexibility.',
-    side: 'bottom',
+      'Add recurring income. The app converts each source to a monthly total.',
+    side: 'left',
     align: 'start',
+    popoverOffset: 16,
   },
   {
     page: 'expenses',
     element: '[data-tour="expense-mode-toggle"]',
-    title: 'Track bills and planned costs',
+    title: 'Track expenses',
     description:
-      'Add recurring expenses or planned expenses with a deadline, like a wedding or large purchase.',
-    side: 'bottom',
-    align: 'start',
+      'Choose recurring bills or planned expenses with a target date.',
+    side: 'top',
+    align: 'center',
+    popoverOffset: 12,
   },
   {
     page: 'debt',
     element: '[data-tour="debt-strategy-card"]',
-    title: 'Plan your debt payoff',
+    title: 'Plan debt payoff',
     description:
-      'Compare payoff strategies and see how extra payments affect your timeline.',
-    side: 'bottom',
-    align: 'start',
+      'Compare payoff strategies and see how extra payments change your timeline.',
+    side: 'top',
+    align: 'end',
+    popoverOffset: 16,
   },
   {
     page: 'savings',
     element: '[data-tour="emergency-fund-card"]',
-    title: 'Build your emergency fund',
+    title: 'Emergency fund',
     description:
-      'Your emergency fund powers runway calculations, while other goals track optional savings.',
-    side: 'bottom',
+      'Manage your emergency fund separately from optional goals.',
+    side: 'top',
     align: 'start',
+    popoverOffset: 14,
   },
   {
     page: 'scenarios',
     element: '[data-tour="scenarios-presets"]',
-    title: 'Test financial scenarios',
+    title: 'Test scenarios',
     description:
-      'Preview how changes to income, expenses, savings, or debt affect your plan.',
+      'Preview how changes affect cashflow, savings, and debt payoff.',
     side: 'bottom',
-    align: 'start',
+    align: 'center',
+    popoverOffset: 14,
   },
 ];
+
+function afterPageRender(callback: () => void) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.setTimeout(callback, 60);
+    });
+  });
+}
 
 interface Options {
   navigate: (page: Page) => void;
@@ -91,6 +107,8 @@ export function useAppTour({ navigate, prefersReducedMotion, onFinished }: Optio
   navigateRef.current = navigate;
   const onFinishedRef = useRef(onFinished);
   onFinishedRef.current = onFinished;
+  const reducedMotionRef = useRef(prefersReducedMotion);
+  reducedMotionRef.current = prefersReducedMotion;
 
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
 
@@ -108,7 +126,11 @@ export function useAppTour({ navigate, prefersReducedMotion, onFinished }: Optio
     const driverObj = driver({
       showProgress: true,
       animate: !prefersReducedMotion,
-      overlayOpacity: 0.55,
+      smoothScroll: true,
+      overlayOpacity: 0.38,
+      stagePadding: 10,
+      stageRadius: 14,
+      popoverOffset: 14,
       allowClose: true,
       popoverClass: 'fp-tour-popover',
       progressText: '{{current}} of {{total}}',
@@ -117,6 +139,13 @@ export function useAppTour({ navigate, prefersReducedMotion, onFinished }: Optio
       doneBtnText: 'Finish tour',
       onPopoverRender: (popover) => {
         popover.closeButton.setAttribute('aria-label', 'Close tour');
+      },
+      onHighlighted: (element) => {
+        element?.scrollIntoView({
+          behavior: reducedMotionRef.current ? 'auto' : 'smooth',
+          block: 'center',
+          inline: 'nearest',
+        });
       },
       onNextClick: () => {
         const currentIdx = driverObj.getActiveIndex() ?? 0;
@@ -128,10 +157,9 @@ export function useAppTour({ navigate, prefersReducedMotion, onFinished }: Optio
 
           if (nextStep.page !== currentStep.page) {
             navigateRef.current(nextStep.page);
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                driverObj.moveNext();
-              });
+            afterPageRender(() => {
+              driverObj.refresh();
+              driverObj.moveNext();
             });
           } else {
             driverObj.moveNext();
@@ -150,10 +178,9 @@ export function useAppTour({ navigate, prefersReducedMotion, onFinished }: Optio
 
           if (prevStep.page !== currentStep.page) {
             navigateRef.current(prevStep.page);
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                driverObj.movePrevious();
-              });
+            afterPageRender(() => {
+              driverObj.refresh();
+              driverObj.movePrevious();
             });
           } else {
             driverObj.movePrevious();
@@ -172,14 +199,18 @@ export function useAppTour({ navigate, prefersReducedMotion, onFinished }: Optio
         popover: {
           title: step.title,
           description: step.description,
-          side: step.side ?? ('bottom' as Side),
-          align: step.align ?? ('start' as Align),
+          side: step.side,
+          align: step.align,
+          popoverOffset: step.popoverOffset,
         },
       })),
     });
 
     driverRef.current = driverObj;
-    driverObj.drive();
+
+    afterPageRender(() => {
+      driverObj.drive();
+    });
   }, [prefersReducedMotion]);
 
   return { startTour };
