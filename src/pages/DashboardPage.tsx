@@ -1,7 +1,15 @@
-import type { AppData, FinancialSummary } from '../types';
+import { useMemo } from 'react';
+import type { AppData, FinancialSummary, Page } from '../types';
 import { formatCurrency } from '../utils/calculations';
+import { projectCashflow } from '../utils/cashflow';
+import { getRecommendations } from '../utils/recommendations';
+import { formatPayoffDuration } from '../utils/debtStrategies';
+import { simulateDebtStrategy } from '../utils/debtStrategies';
 import { StatCard } from '../components/StatCard';
 import { Card, CardHeader } from '../components/Card';
+import { PageHeader } from '../components/PageHeader';
+import { EmptyState } from '../components/EmptyState';
+import { RecommendationCard } from '../components/RecommendationCard';
 import {
   PieChart,
   Pie,
@@ -9,38 +17,49 @@ import {
   Tooltip,
   BarChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
   Legend,
+  ComposedChart,
 } from 'recharts';
 
 interface Props {
   data: AppData;
   summary: FinancialSummary;
+  onNavigate?: (page: Page) => void;
 }
 
-const COLORS = ['#6366f1', '#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#84cc16'];
+const COLORS = ['#6366f1', '#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
 
-export function DashboardPage({ data, summary }: Props) {
-  const { totalMonthlyIncome, totalMonthlyExpenses, totalMonthlyDebtPayments, totalMonthlySavingsContributions, monthlyLeftover, safeWeeklySpending } = summary;
+export function DashboardPage({ data, summary, onNavigate }: Props) {
+  const {
+    totalMonthlyIncome,
+    totalMonthlyExpenses,
+    totalMonthlyDebtPayments,
+    totalMonthlySavingsContributions,
+    monthlyLeftover,
+    safeWeeklySpending,
+  } = summary;
 
   const isEmpty = data.income.length === 0 && data.expenses.length === 0;
 
-  const incomeVsExpensesData = [
-    { name: 'Income', value: totalMonthlyIncome },
-    { name: 'Expenses', value: totalMonthlyExpenses },
-    { name: 'Debt Payments', value: totalMonthlyDebtPayments },
-    { name: 'Savings', value: totalMonthlySavingsContributions },
-    { name: 'Leftover', value: Math.max(0, monthlyLeftover) },
-  ].filter((d) => d.value > 0);
+  const cashflow = useMemo(() => projectCashflow(data, 12), [data]);
+  const recommendations = useMemo(
+    () => getRecommendations(data, summary),
+    [data, summary],
+  );
+  const debtFreeMonths = useMemo(
+    () => simulateDebtStrategy(data.debts, 'custom').payoffMonths,
+    [data.debts],
+  );
 
   const categoryData = data.expenses.reduce<Record<string, number>>((acc, e) => {
     acc[e.category] = (acc[e.category] ?? 0) + e.amount;
     return acc;
   }, {});
-
   const expensePieData = Object.entries(categoryData).map(([name, value]) => ({ name, value }));
 
   const budgetBarData = [
@@ -53,30 +72,48 @@ export function DashboardPage({ data, summary }: Props) {
 
   if (isEmpty) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-1">Your financial overview at a glance.</p>
-        </div>
-        <div className="text-center py-24 text-slate-400">
-          <p className="text-5xl mb-4">📊</p>
-          <p className="font-semibold text-lg">Nothing to show yet</p>
-          <p className="text-sm mt-2 max-w-xs mx-auto">
-            Head to <strong>Income</strong> and <strong>Expenses</strong> to get started. Your dashboard will update automatically.
-          </p>
-        </div>
+      <div>
+        <PageHeader
+          title="Dashboard"
+          subtitle="Your complete financial picture — budget, forecast, and next steps."
+        />
+        <Card>
+          <EmptyState
+            icon="📊"
+            title="Welcome to FinancePlanner"
+            description="Load demo data to explore features, or add your income and expenses to build your personal plan."
+            action={
+              onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('income')}
+                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                >
+                  Start with Income →
+                </button>
+              )
+            }
+          />
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-        <p className="text-slate-500 text-sm mt-1">Your financial overview at a glance.</p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Dashboard"
+        subtitle="Your complete financial picture — budget, 12-month forecast, and recommended actions."
+      />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      {recommendations.length > 0 && (
+        <Card>
+          <CardHeader title="Next best actions" subtitle="Personalized based on your plan" />
+          <RecommendationCard recommendations={recommendations} onNavigate={onNavigate} />
+        </Card>
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <StatCard
           label="Monthly Income"
           value={formatCurrency(totalMonthlyIncome)}
@@ -88,38 +125,87 @@ export function DashboardPage({ data, summary }: Props) {
           color="red"
         />
         <StatCard
-          label="Debt Payments"
-          value={formatCurrency(totalMonthlyDebtPayments)}
-          color="amber"
-        />
-        <StatCard
-          label="Savings Contributions"
-          value={formatCurrency(totalMonthlySavingsContributions)}
-          color="indigo"
-        />
-        <StatCard
           label="Monthly Leftover"
           value={formatCurrency(monthlyLeftover)}
-          subtext={monthlyLeftover < 0 ? 'Over budget' : 'Available to spend/save'}
+          subtext={monthlyLeftover < 0 ? 'Over budget' : 'After all obligations'}
           color={monthlyLeftover >= 0 ? 'blue' : 'red'}
+          featured
         />
         <StatCard
           label="Safe Weekly Spend"
           value={formatCurrency(safeWeeklySpending)}
-          subtext="Leftover ÷ 4.33 weeks"
+          subtext="Discretionary · leftover ÷ 4.33"
           color="green"
         />
+        <StatCard
+          label="Debt Payments"
+          value={formatCurrency(totalMonthlyDebtPayments)}
+          subtext={debtFreeMonths > 0 ? `Debt-free in ${formatPayoffDuration(debtFreeMonths)}` : undefined}
+          color="amber"
+        />
+        <StatCard
+          label="Savings Rate"
+          value={formatCurrency(totalMonthlySavingsContributions)}
+          subtext="Planned monthly contributions"
+          color="indigo"
+        />
       </div>
+
+      <Card>
+        <CardHeader
+          title="12-Month Cashflow Forecast"
+          subtitle="Projected income, obligations, and cumulative cash position"
+        />
+        <ResponsiveContainer width="100%" height={300}>
+          <ComposedChart data={cashflow} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} />
+            <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
+            <Tooltip
+              formatter={(v, name) => [formatCurrency(Number(v)), String(name)]}
+              labelFormatter={(l) => l}
+            />
+            <Legend />
+            <Bar dataKey="income" fill="#10b981" name="Income" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="debtPayments" fill="#f59e0b" name="Debt" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="savings" fill="#6366f1" name="Savings" radius={[4, 4, 0, 0]} />
+            <Line
+              type="monotone"
+              dataKey="cumulativeCash"
+              stroke="#3b82f6"
+              strokeWidth={2.5}
+              dot={false}
+              name="Cumulative cash"
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100">
+          <ForecastStat label="Year-end cash" value={cashflow[cashflow.length - 1]?.cumulativeCash ?? 0} />
+          <ForecastStat
+            label="Avg monthly leftover"
+            value={Math.round(cashflow.reduce((s, m) => s + m.leftover, 0) / cashflow.length)}
+          />
+          <ForecastStat
+            label="Lowest month"
+            value={Math.min(...cashflow.map((m) => m.leftover))}
+          />
+          <ForecastStat
+            label="Highest month"
+            value={Math.max(...cashflow.map((m) => m.leftover))}
+          />
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {budgetBarData.length > 0 && (
           <Card>
-            <CardHeader title="Monthly Budget Breakdown" />
+            <CardHeader title="Monthly Budget" />
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={budgetBarData} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} />
                 <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
                   {budgetBarData.map((entry, i) => (
@@ -150,50 +236,16 @@ export function DashboardPage({ data, summary }: Props) {
                   ))}
                 </Pie>
                 <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} />
-                <Legend
-                  formatter={(value) => <span className="text-xs text-slate-600">{value}</span>}
-                />
+                <Legend formatter={(value) => <span className="text-xs text-slate-600">{value}</span>} />
               </PieChart>
             </ResponsiveContainer>
           </Card>
         )}
       </div>
 
-      {incomeVsExpensesData.length > 0 && (
-        <Card>
-          <CardHeader
-            title="Where Your Money Goes"
-            subtitle="Monthly allocation as a percentage of income"
-          />
-          <div className="space-y-3">
-            {incomeVsExpensesData
-              .filter((d) => d.name !== 'Income')
-              .map((item, i) => {
-                const pct = totalMonthlyIncome > 0 ? (item.value / totalMonthlyIncome) * 100 : 0;
-                return (
-                  <div key={item.name}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-slate-600">{item.name}</span>
-                      <span className="font-medium text-slate-700">
-                        {formatCurrency(item.value)} <span className="text-slate-400 font-normal">({pct.toFixed(0)}%)</span>
-                      </span>
-                    </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${Math.min(100, pct)}%`, backgroundColor: COLORS[i % COLORS.length] }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </Card>
-      )}
-
       {data.savingsGoals.length > 0 && (
         <Card>
-          <CardHeader title="Savings Goals Progress" />
+          <CardHeader title="Savings Goals" />
           <div className="space-y-4">
             {data.savingsGoals.map((goal) => {
               const pct = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
@@ -207,7 +259,7 @@ export function DashboardPage({ data, summary }: Props) {
                   </div>
                   <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${pct >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                      className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -217,6 +269,15 @@ export function DashboardPage({ data, summary }: Props) {
           </div>
         </Card>
       )}
+    </div>
+  );
+}
+
+function ForecastStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-slate-50 rounded-xl p-3 text-center">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="text-base font-bold text-slate-800 mt-0.5 tabular-nums">{formatCurrency(value)}</p>
     </div>
   );
 }

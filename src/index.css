@@ -7,5 +7,16 @@
 
   body {
     @apply bg-slate-50 text-slate-800 antialiased;
+    font-feature-settings: "tnum" 1;
+  }
+
+  h1, h2, h3 {
+    @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0);
   }
 }

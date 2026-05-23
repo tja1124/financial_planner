@@ -1,10 +1,18 @@
-import { useState } from 'react';
-import type { Debt } from '../types';
+import { useState, useMemo } from 'react';
+import type { Debt, DebtStrategy } from '../types';
 import { generateId } from '../utils/storage';
 import { formatCurrency, projectDebtPayoff } from '../utils/calculations';
+import {
+  simulateDebtStrategy,
+  formatPayoffDuration,
+  STRATEGY_LABELS,
+  STRATEGY_DESCRIPTIONS,
+} from '../utils/debtStrategies';
 import { Card, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { PageHeader } from '../components/PageHeader';
+import { EmptyState } from '../components/EmptyState';
 import {
   LineChart,
   Line,
@@ -21,6 +29,14 @@ interface Props {
   onChange: (debts: Debt[]) => void;
 }
 
+const STRATEGIES: DebtStrategy[] = ['snowball', 'avalanche', 'custom'];
+
+const STRATEGY_COLORS: Record<DebtStrategy, string> = {
+  snowball: '#10b981',
+  avalanche: '#6366f1',
+  custom: '#f59e0b',
+};
+
 function emptyDebt(): Omit<Debt, 'id'> {
   return { name: '', balance: 0, interestRate: 0, minimumPayment: 0, extraPayment: 0 };
 }
@@ -29,6 +45,39 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
   const [form, setForm] = useState<Omit<Debt, 'id'>>(emptyDebt());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedDebtId, setSelectedDebtId] = useState<string | null>(null);
+  const [compareView, setCompareView] = useState(true);
+
+  const strategyResults = useMemo(
+    () => STRATEGIES.map((s) => simulateDebtStrategy(debts, s)),
+    [debts],
+  );
+
+  const bestStrategy = useMemo(() => {
+    if (strategyResults.every((r) => r.payoffMonths === 0)) return null;
+    return strategyResults.reduce((best, cur) =>
+      cur.totalInterest < best.totalInterest ? cur : best,
+    );
+  }, [strategyResults]);
+
+  const comparisonChartData = useMemo(() => {
+    const maxMonths = Math.max(...strategyResults.map((r) => r.payoffMonths), 1);
+    const step = Math.max(1, Math.floor(maxMonths / 24));
+    const points: Record<string, number | string>[] = [];
+
+    for (let m = 0; m <= maxMonths; m += step) {
+      const point: Record<string, number | string> = { month: m };
+      for (const result of strategyResults) {
+        let balance = result.timeline[0]?.totalBalance ?? 0;
+        for (const t of result.timeline) {
+          if (t.month <= m) balance = t.totalBalance;
+        }
+        if (m > result.payoffMonths) balance = 0;
+        point[result.strategy] = balance;
+      }
+      points.push(point);
+    }
+    return points;
+  }, [strategyResults]);
 
   function handleAdd() {
     if (!form.name.trim() || form.balance <= 0) return;
@@ -66,16 +115,20 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
   const payoffRemMonths = payoffMonths % 12;
   const totalInterest = payoffData.reduce((s, m) => s + m.interest, 0);
 
-  const chartData = payoffData
-    .filter((_, i) => i % Math.max(1, Math.floor(payoffData.length / 24)) === 0 || i === payoffData.length - 1)
+  const singleChartData = payoffData
+    .filter(
+      (_, i) =>
+        i % Math.max(1, Math.floor(payoffData.length / 24)) === 0 ||
+        i === payoffData.length - 1,
+    )
     .map((m) => ({ month: m.month, balance: Math.round(m.balance) }));
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Debt Planner</h1>
-        <p className="text-slate-500 text-sm mt-1">Track your debts and see payoff projections.</p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Debt Planner"
+        subtitle="Compare snowball vs avalanche payoff strategies and track individual debts."
+      />
 
       <Card>
         <CardHeader title={editingId ? 'Edit Debt' : 'Add Debt'} />
@@ -116,7 +169,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             onChange={(e) => setForm({ ...form, minimumPayment: parseFloat(e.target.value) || 0 })}
           />
           <Input
-            label="Extra payment"
+            label="Extra payment (custom)"
             type="number"
             min={0}
             placeholder="0"
@@ -125,6 +178,9 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             onChange={(e) => setForm({ ...form, extraPayment: parseFloat(e.target.value) || 0 })}
           />
         </div>
+        <p className="text-xs text-slate-500 mt-3">
+          Extra payments apply to the Custom strategy. Snowball and avalanche pool all extras automatically.
+        </p>
         <div className="flex gap-2 mt-4">
           <Button onClick={handleAdd} disabled={!form.name.trim() || form.balance <= 0}>
             {editingId ? 'Save Changes' : '+ Add Debt'}
@@ -143,101 +199,134 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             <CardHeader
               title="Your Debts"
               action={
-                <span className="text-sm font-semibold text-red-500">
+                <span className="text-sm font-semibold text-red-600">
                   {formatCurrency(debts.reduce((s, d) => s + d.balance, 0))} total
                 </span>
               }
             />
             <div className="divide-y divide-slate-100">
               {debts.map((debt) => (
-                <div key={debt.id} className="py-3">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setSelectedDebtId(debt.id)}
-                          className={`font-medium truncate cursor-pointer transition-colors ${
-                            selectedDebt?.id === debt.id ? 'text-indigo-600' : 'text-slate-800 hover:text-indigo-500'
-                          }`}
-                        >
-                          {debt.name}
-                        </button>
-                        {selectedDebt?.id === debt.id && (
-                          <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-medium">
-                            Viewing
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {formatCurrency(debt.balance)} balance · {debt.interestRate}% APR ·{' '}
-                        {formatCurrency(debt.minimumPayment + debt.extraPayment)}/mo payment
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => handleEdit(debt)}>
-                        Edit
-                      </Button>
-                      <Button size="sm" variant="danger" onClick={() => handleDelete(debt.id)}>
-                        Remove
-                      </Button>
-                    </div>
+                <div key={debt.id} className="py-3 flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDebtId(debt.id)}
+                      className={`font-medium truncate cursor-pointer ${
+                        selectedDebt?.id === debt.id ? 'text-indigo-600' : 'text-slate-800'
+                      }`}
+                    >
+                      {debt.name}
+                    </button>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {formatCurrency(debt.balance)} · {debt.interestRate}% APR ·{' '}
+                      {formatCurrency(debt.minimumPayment + debt.extraPayment)}/mo
+                      {debt.extraPayment > 0 && (
+                        <span className="text-indigo-600"> (+{formatCurrency(debt.extraPayment)} extra)</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => handleEdit(debt)}>Edit</Button>
+                    <Button size="sm" variant="danger" onClick={() => handleDelete(debt.id)}>Remove</Button>
                   </div>
                 </div>
               ))}
             </div>
           </Card>
 
+          <Card>
+            <CardHeader
+              title="Strategy Comparison"
+              subtitle="Same debts, different payoff methods"
+              action={
+                <button
+                  type="button"
+                  onClick={() => setCompareView(!compareView)}
+                  className="text-xs font-medium text-indigo-600 cursor-pointer"
+                >
+                  {compareView ? 'Hide chart' : 'Show chart'}
+                </button>
+              }
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              {strategyResults.map((result) => {
+                const isBest = bestStrategy?.strategy === result.strategy && debts.length > 0;
+                return (
+                  <div
+                    key={result.strategy}
+                    className={`rounded-xl p-4 border-2 ${
+                      isBest ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-100 bg-slate-50/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-semibold text-sm text-slate-800">
+                        {STRATEGY_LABELS[result.strategy]}
+                      </p>
+                      {isBest && (
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          Lowest interest
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+                      {STRATEGY_DESCRIPTIONS[result.strategy]}
+                    </p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500">Payoff</p>
+                      <p className="text-lg font-bold text-slate-800">
+                        {formatPayoffDuration(result.payoffMonths)}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-2">Total interest</p>
+                      <p className="text-base font-semibold text-red-600">
+                        {formatCurrency(result.totalInterest)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {compareView && comparisonChartData.length > 1 && (
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={comparisonChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `Mo ${v}`} />
+                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), '']} />
+                  <Legend />
+                  {STRATEGIES.map((s) => (
+                    <Line
+                      key={s}
+                      type="monotone"
+                      dataKey={s}
+                      stroke={STRATEGY_COLORS[s]}
+                      strokeWidth={2}
+                      dot={false}
+                      name={STRATEGY_LABELS[s]}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </Card>
+
           {selectedDebt && payoffData.length > 0 && (
             <Card>
               <CardHeader
-                title={`Payoff Projection: ${selectedDebt.name}`}
+                title={`Individual: ${selectedDebt.name}`}
                 subtitle={
                   payoffYears > 0
-                    ? `Paid off in ${payoffYears}y ${payoffRemMonths}mo · ${formatCurrency(totalInterest)} in interest`
-                    : `Paid off in ${payoffMonths} months · ${formatCurrency(totalInterest)} in interest`
+                    ? `Paid off in ${payoffYears}y ${payoffRemMonths}mo · ${formatCurrency(totalInterest)} interest (custom extras)`
+                    : `Paid off in ${payoffMonths} months · ${formatCurrency(totalInterest)} interest`
                 }
               />
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-slate-50 rounded-xl p-4 text-center">
-                  <p className="text-xs text-slate-500 mb-1">Balance</p>
-                  <p className="font-bold text-slate-800">{formatCurrency(selectedDebt.balance)}</p>
-                </div>
-                <div className="bg-red-50 rounded-xl p-4 text-center">
-                  <p className="text-xs text-slate-500 mb-1">Total Interest</p>
-                  <p className="font-bold text-red-600">{formatCurrency(totalInterest)}</p>
-                </div>
-                <div className="bg-emerald-50 rounded-xl p-4 text-center">
-                  <p className="text-xs text-slate-500 mb-1">Payoff In</p>
-                  <p className="font-bold text-emerald-700">
-                    {payoffYears > 0 ? `${payoffYears}y ${payoffRemMonths}mo` : `${payoffMonths}mo`}
-                  </p>
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={chartData}>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={singleChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 11, fill: '#94a3b8' }}
-                    tickFormatter={(v) => `Mo ${v}`}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: '#94a3b8' }}
-                    tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip
-                    formatter={(v) => [formatCurrency(Number(v)), 'Balance']}
-                    labelFormatter={(l) => `Month ${l}`}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="balance"
-                    stroke="#6366f1"
-                    strokeWidth={2}
-                    dot={false}
-                    name="Remaining Balance"
-                  />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Balance']} />
+                  <Line type="monotone" dataKey="balance" stroke="#6366f1" strokeWidth={2} dot={false} name="Balance" />
                 </LineChart>
               </ResponsiveContainer>
             </Card>
@@ -246,11 +335,13 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
       )}
 
       {debts.length === 0 && (
-        <div className="text-center py-16 text-slate-400">
-          <p className="text-4xl mb-3">🏦</p>
-          <p className="font-medium">No debts tracked</p>
-          <p className="text-sm mt-1">Add a debt above to see your payoff timeline.</p>
-        </div>
+        <Card>
+          <EmptyState
+            icon="🏦"
+            title="No debts tracked"
+            description="Add your debts to compare snowball, avalanche, and custom payoff strategies."
+          />
+        </Card>
       )}
     </div>
   );
