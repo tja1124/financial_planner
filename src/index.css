@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;
@@ -10,12 +12,12 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-slate-50 text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-100;
     font-feature-settings: "tnum" 1, "kern" 1;
   }
 
   h1, h2, h3 {
-    @apply tracking-tight text-slate-900;
+    @apply tracking-tight text-slate-900 dark:text-slate-50;
   }
 }
 
@@ -56,7 +58,19 @@
   }
 }
 
-/* Recharts: improve touch targets on mobile */
 .recharts-wrapper {
   font-family: inherit;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--chart-grid, #f1f5f9);
+}
+
+.dark {
+  --chart-grid: #334155;
+}
+
+:root:not(.dark) {
+  --chart-grid: #f1f5f9;
 }

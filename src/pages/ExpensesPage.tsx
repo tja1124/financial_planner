@@ -15,6 +15,7 @@ import { Input, Select } from '../components/Input';
 import { PageHeader } from '../components/PageHeader';
 import { FormAlerts } from '../components/FormAlerts';
 import { EmptyState } from '../components/EmptyState';
+import { useAppActions } from '../context/AppActionsContext';
 
 const CATEGORY_OPTIONS: { value: ExpenseCategory; label: string }[] = [
   { value: 'Housing', label: 'Housing' },
@@ -52,6 +53,7 @@ function emptyExpense(): Omit<Expense, 'id'> {
 }
 
 export function ExpensesPage({ expenses, onChange }: Props) {
+  const { data, notifyUndo } = useAppActions();
   const [form, setForm] = useState<Omit<Expense, 'id'>>(emptyExpense());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('All');
@@ -87,7 +89,10 @@ export function ExpensesPage({ expenses, onChange }: Props) {
   }
 
   function handleDelete(id: string) {
+    const item = expenses.find((e) => e.id === id);
+    const snapshot = data;
     onChange(expenses.filter((e) => e.id !== id));
+    notifyUndo(item ? `"${item.name}" removed.` : 'Expense removed.', snapshot);
   }
 
   function handleCancel() {
@@ -193,7 +198,7 @@ export function ExpensesPage({ expenses, onChange }: Props) {
               ))}
             </div>
           )}
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {filtered.map((expense) => (
               <div
                 key={expense.id}
@@ -202,7 +207,7 @@ export function ExpensesPage({ expenses, onChange }: Props) {
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <span className="text-xl shrink-0">{CATEGORY_EMOJIS[expense.category]}</span>
                   <div className="min-w-0">
-                    <p className="font-medium text-slate-800 truncate">{expense.name}</p>
+                    <p className="font-medium text-slate-800 dark:text-slate-100 truncate">{expense.name}</p>
                     <div className="flex flex-wrap items-center gap-2 mt-0.5">
                       <span className="text-xs text-slate-500">{expense.category}</span>
                       <span

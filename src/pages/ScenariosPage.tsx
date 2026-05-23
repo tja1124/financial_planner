@@ -80,21 +80,21 @@ export function ScenariosPage({ data }: Props) {
               onClick={() => setSelected(preset)}
               className={`text-left p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                 isActive
-                  ? 'border-indigo-500 bg-indigo-50/80 shadow-sm'
-                  : 'border-slate-100 bg-white hover:border-slate-200'
+                  ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/50 shadow-sm'
+                  : 'border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-600'
               }`}
             >
-              <p className={`font-semibold text-sm ${isActive ? 'text-indigo-700' : 'text-slate-800'}`}>
+              <p className={`font-semibold text-sm ${isActive ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-800 dark:text-slate-100'}`}>
                 {PRESET_LABELS[preset]}
               </p>
-              <p className="text-xs text-slate-500 mt-1 line-clamp-2">{PRESET_DESCRIPTIONS[preset]}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{PRESET_DESCRIPTIONS[preset]}</p>
               <p
                 className={`text-lg font-bold mt-3 tabular-nums ${
                   metrics.monthlyLeftover >= 0 ? 'text-emerald-600' : 'text-red-600'
                 }`}
               >
                 {formatCurrency(metrics.monthlyLeftover)}
-                <span className="text-xs font-normal text-slate-500">/mo left</span>
+                <span className="text-xs font-normal text-slate-500 dark:text-slate-400">/mo left</span>
               </p>
             </button>
           );
@@ -190,7 +190,7 @@ export function ScenariosPage({ data }: Props) {
                       {formatCurrency(s.monthlyLeftover)}
                     </span>
                   </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full ${positive ? 'bg-emerald-500' : 'bg-red-400'}`}
                       style={{ width: `${pct}%` }}
@@ -208,13 +208,13 @@ export function ScenariosPage({ data }: Props) {
         <div className="table-scroll">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
-              <tr className="border-b border-slate-100">
-                <th className="text-left py-3 px-2 font-semibold text-slate-600">Metric</th>
+              <tr className="border-b border-slate-100 dark:border-slate-800">
+                <th className="text-left py-3 px-2 font-semibold text-slate-600 dark:text-slate-400">Metric</th>
                 {allScenarios.map((s) => (
                   <th
                     key={s.preset}
                     className={`text-right py-3 px-2 font-semibold ${
-                      selected === s.preset ? 'text-indigo-600' : 'text-slate-600'
+                      selected === s.preset ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400'
                     }`}
                   >
                     {s.label.replace(' Plan', '').replace(' Scenario', '')}
@@ -258,9 +258,9 @@ export function ScenariosPage({ data }: Props) {
 function CompareRow({ label, values }: { label: string; values: string[] }) {
   return (
     <tr>
-      <td className="py-3 px-2 text-slate-600">{label}</td>
+      <td className="py-3 px-2 text-slate-600 dark:text-slate-400">{label}</td>
       {values.map((v, i) => (
-        <td key={i} className="py-3 px-2 text-right font-medium text-slate-800 tabular-nums">
+        <td key={i} className="py-3 px-2 text-right font-medium text-slate-800 dark:text-slate-100 tabular-nums">
           {v}
         </td>
       ))}
@@ -288,7 +288,7 @@ function SliderField({
   return (
     <div>
       <div className="flex justify-between text-sm mb-2">
-        <span className="font-medium text-slate-700">{label}</span>
+        <span className="font-medium text-slate-700 dark:text-slate-300">{label}</span>
         <span className="font-semibold text-indigo-600 tabular-nums">
           {value}
           {suffix}

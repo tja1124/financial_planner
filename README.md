@@ -12,6 +12,8 @@ Your data stays in your browser via `localStorage`. Export a JSON backup anytime
 - **Savings Goals** — Targets, progress bars, and monthly contribution estimates
 - **Scenarios** — Compare current plan vs aggressive debt payoff, higher savings, lower spending, or custom sliders
 - **Data controls** — Export/import JSON backups, demo data, reset with confirmation
+- **Dark mode** — Light, dark, or system theme (persisted locally)
+- **Undo** — Reversible deletes, deposits, reset, import, and demo load
 
 ## Screenshots
 

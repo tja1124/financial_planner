@@ -11,6 +11,7 @@ import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { RecommendationCard } from '../components/RecommendationCard';
 import { ChartContainer } from '../components/ChartContainer';
+import { useChartTheme } from '../hooks/useChartTheme';
 import {
   PieChart,
   Pie,
@@ -36,6 +37,7 @@ interface Props {
 const COLORS = ['#6366f1', '#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
 
 export function DashboardPage({ data, summary, onNavigate }: Props) {
+  const chart = useChartTheme();
   const {
     totalMonthlyIncome,
     totalMonthlyExpenses,
@@ -160,12 +162,13 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
         <ChartContainer height={300}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={cashflow} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} />
-            <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
+            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: chart.tick }} />
+            <YAxis tick={{ fontSize: 10, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
             <Tooltip
               formatter={(v, name) => [formatCurrency(Number(v)), String(name)]}
               labelFormatter={(l) => l}
+              contentStyle={chart.tooltip.contentStyle}
             />
             <Legend />
             <Bar dataKey="income" fill="#10b981" name="Income" radius={[4, 4, 0, 0]} />
@@ -183,7 +186,7 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
           </ComposedChart>
         </ResponsiveContainer>
         </ChartContainer>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
           <ForecastStat label="Year-end cash" value={cashflow[cashflow.length - 1]?.cumulativeCash ?? 0} />
           <ForecastStat
             label="Avg monthly leftover"
@@ -207,10 +210,10 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
             <ChartContainer height={240}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={budgetBarData} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: chart.tick }} />
+                <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
+                <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} contentStyle={chart.tooltip.contentStyle} />
                 <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
                   {budgetBarData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
@@ -241,8 +244,8 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} />
-                <Legend formatter={(value) => <span className="text-xs text-slate-600">{value}</span>} />
+                <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} contentStyle={chart.tooltip.contentStyle} />
+                <Legend formatter={(value) => <span className="text-xs text-slate-600 dark:text-slate-400">{value}</span>} />
               </PieChart>
             </ResponsiveContainer>
             </ChartContainer>
@@ -259,12 +262,12 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
               return (
                 <div key={goal.id}>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="font-medium text-slate-700">{goal.name}</span>
-                    <span className="text-slate-500 tabular-nums">
+                    <span className="font-medium text-slate-700 dark:text-slate-200">{goal.name}</span>
+                    <span className="text-slate-500 dark:text-slate-400 tabular-nums">
                       {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
                     </span>
                   </div>
-                  <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
                       style={{ width: `${pct}%` }}
@@ -282,9 +285,9 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
 
 function ForecastStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-slate-50 rounded-xl p-3 text-center">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="text-base font-bold text-slate-800 mt-0.5 tabular-nums">{formatCurrency(value)}</p>
+    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="text-base font-bold text-slate-800 dark:text-slate-100 mt-0.5 tabular-nums">{formatCurrency(value)}</p>
     </div>
   );
 }

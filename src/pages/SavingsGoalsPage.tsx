@@ -13,6 +13,7 @@ import { Input } from '../components/Input';
 import { PageHeader } from '../components/PageHeader';
 import { FormAlerts } from '../components/FormAlerts';
 import { EmptyState } from '../components/EmptyState';
+import { useAppActions } from '../context/AppActionsContext';
 
 interface Props {
   savingsGoals: SavingsGoal[];
@@ -31,6 +32,7 @@ function emptyGoal(): Omit<SavingsGoal, 'id'> {
 }
 
 export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
+  const { data, notifyUndo } = useAppActions();
   const [form, setForm] = useState<Omit<SavingsGoal, 'id'>>(emptyGoal());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [validation, setValidation] = useState(emptyValidation());
@@ -62,15 +64,20 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
   }
 
   function handleDelete(id: string) {
+    const item = savingsGoals.find((g) => g.id === id);
+    const snapshot = data;
     onChange(savingsGoals.filter((g) => g.id !== id));
+    notifyUndo(item ? `"${item.name}" removed.` : 'Savings goal removed.', snapshot);
   }
 
   function handleDeposit(id: string, amount: number) {
+    const snapshot = data;
     onChange(
       savingsGoals.map((g) =>
         g.id === id ? { ...g, currentAmount: Math.min(g.targetAmount, g.currentAmount + amount) } : g
-      )
+      ),
     );
+    notifyUndo(`Deposited ${formatCurrency(amount)}.`, snapshot);
   }
 
   return (
@@ -146,7 +153,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
               <Card key={goal.id}>
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="font-semibold text-slate-800">{goal.name}</h3>
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-100">{goal.name}</h3>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Target: {new Date(goal.targetDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                       {isPast && <span className="text-red-400 ml-1">(overdue)</span>}
@@ -167,7 +174,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
                     <span className="text-slate-600 font-medium">{formatCurrency(goal.currentAmount)}</span>
                     <span className="text-slate-400">{formatCurrency(goal.targetAmount)}</span>
                   </div>
-                  <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         isComplete ? 'bg-emerald-500' : isPast ? 'bg-red-400' : 'bg-indigo-500'
@@ -179,7 +186,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
                 </div>
 
                 {!isComplete && (
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
                     <div>
                       <p className="text-xs text-slate-500">Monthly needed</p>
                       <p className={`text-sm font-semibold ${isPast ? 'text-red-500' : 'text-indigo-600'}`}>
@@ -246,7 +253,7 @@ function DepositButton({ onDeposit }: { onDeposit: (amount: number) => void }) {
         onChange={(e) => setAmount(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
         autoFocus
-        className="w-24 rounded-lg border border-slate-200 text-sm py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="w-24 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
       />
       <Button size="sm" onClick={handleSubmit}>Save</Button>
       <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>✕</Button>

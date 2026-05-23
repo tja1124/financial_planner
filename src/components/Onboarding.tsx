@@ -56,9 +56,9 @@ export function Onboarding({ onComplete }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden">
-        <div className="h-1 bg-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg overflow-hidden">
+        <div className="h-1 bg-slate-100 dark:bg-slate-800">
           <div
             className="h-full bg-indigo-500 transition-all duration-300"
             style={{ width: `${((step + 1) / steps.length) * 100}%` }}
@@ -70,8 +70,8 @@ export function Onboarding({ onComplete }: Props) {
             <span className="text-5xl block mb-4" aria-hidden>
               {current.icon}
             </span>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{current.title}</h1>
-            <p className="text-slate-600 mt-3 text-sm sm:text-base leading-relaxed">{current.body}</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">{current.title}</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-3 text-sm sm:text-base leading-relaxed">{current.body}</p>
           </div>
 
           {isChoiceStep && (
@@ -81,26 +81,26 @@ export function Onboarding({ onComplete }: Props) {
                 onClick={() => setChoice('blank')}
                 className={`p-5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                   choice === 'blank'
-                    ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200'
-                    : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
+                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/50 ring-2 ring-indigo-200 dark:ring-indigo-800'
+                    : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 bg-slate-50/50 dark:bg-slate-800/50'
                 }`}
               >
                 <span className="text-2xl">📝</span>
-                <p className="font-semibold text-slate-900 mt-2">Start blank</p>
-                <p className="text-xs text-slate-500 mt-1">Enter your own numbers</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-50 mt-2">Start blank</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Enter your own numbers</p>
               </button>
               <button
                 type="button"
                 onClick={() => setChoice('demo')}
                 className={`p-5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                   choice === 'demo'
-                    ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200'
-                    : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
+                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/50 ring-2 ring-indigo-200 dark:ring-indigo-800'
+                    : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 bg-slate-50/50 dark:bg-slate-800/50'
                 }`}
               >
                 <span className="text-2xl">📊</span>
-                <p className="font-semibold text-slate-900 mt-2">Load demo data</p>
-                <p className="text-xs text-slate-500 mt-1">Explore with sample finances</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-50 mt-2">Load demo data</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Explore with sample finances</p>
               </button>
             </div>
           )}
@@ -111,7 +111,7 @@ export function Onboarding({ onComplete }: Props) {
                 <span
                   key={i}
                   className={`h-1.5 rounded-full transition-all ${
-                    i === step ? 'w-6 bg-indigo-500' : 'w-1.5 bg-slate-200'
+                    i === step ? 'w-6 bg-indigo-500' : 'w-1.5 bg-slate-200 dark:bg-slate-700'
                   }`}
                 />
               ))}

@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Layout } from './components/Layout';
 import { Onboarding } from './components/Onboarding';
+import { Toast } from './components/Toast';
 import { DashboardPage } from './pages/DashboardPage';
 import { ScenariosPage } from './pages/ScenariosPage';
 import { IncomePage } from './pages/IncomePage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { DebtPlannerPage } from './pages/DebtPlannerPage';
 import { SavingsGoalsPage } from './pages/SavingsGoalsPage';
+import { AppActionsProvider, useAppActions } from './context/AppActionsContext';
 import {
   loadData,
   saveData,
@@ -30,34 +32,12 @@ export default function App() {
   const [lastSaved, setLastSaved] = useState<string | null>(() =>
     formatLastSaved(getLastSaved()),
   );
-  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
+    if (showOnboarding) return;
     saveData(data);
     setLastSaved(formatLastSaved(getLastSaved()));
-  }, [data]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4000);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  const summary = computeSummary(
-    data.income,
-    data.expenses,
-    data.debts,
-    data.savingsGoals,
-  );
-
-  const setDataField = useCallback(
-    <K extends keyof AppData>(key: K) =>
-      (value: AppData[K]) =>
-        setData((prev) => ({ ...prev, [key]: value })),
-    [],
-  );
-
-  const navigate = useCallback((p: Page) => setPage(p), []);
+  }, [data, showOnboarding]);
 
   const handleOnboardingComplete = useCallback((choice: 'blank' | 'demo') => {
     completeOnboarding();
@@ -70,6 +50,57 @@ export default function App() {
     }
     setShowOnboarding(false);
   }, []);
+
+  if (showOnboarding) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
+
+  return (
+    <AppActionsProvider data={data} setData={setData}>
+      <AppMain
+        page={page}
+        setPage={setPage}
+        data={data}
+        setData={setData}
+        lastSaved={lastSaved}
+        setLastSaved={setLastSaved}
+      />
+    </AppActionsProvider>
+  );
+}
+
+function AppMain({
+  page,
+  setPage,
+  data,
+  setData,
+  lastSaved,
+  setLastSaved,
+}: {
+  page: Page;
+  setPage: (p: Page) => void;
+  data: AppData;
+  setData: React.Dispatch<React.SetStateAction<AppData>>;
+  lastSaved: string | null;
+  setLastSaved: (v: string | null) => void;
+}) {
+  const { notifyUndo, showToast, toast, dismissToast } = useAppActions();
+
+  const summary = computeSummary(
+    data.income,
+    data.expenses,
+    data.debts,
+    data.savingsGoals,
+  );
+
+  const setDataField = useCallback(
+    <K extends keyof AppData>(key: K) =>
+      (value: AppData[K]) =>
+        setData((prev) => ({ ...prev, [key]: value })),
+    [setData],
+  );
+
+  const navigate = useCallback((p: Page) => setPage(p), [setPage]);
 
   const handleLoadDemo = useCallback(() => {
     const hasData =
@@ -85,50 +116,52 @@ export default function App() {
     ) {
       return;
     }
+    const snapshot = data;
     setData(demoData);
-    setPage('dashboard');
-    setToast('Demo data loaded.');
-  }, [data]);
+    navigate('dashboard');
+    notifyUndo('Demo data loaded.', snapshot);
+  }, [data, setData, navigate, notifyUndo]);
 
   const handleExport = useCallback(() => {
     downloadJsonExport(data);
-    setToast('Backup downloaded.');
-  }, [data]);
+    showToast('Backup downloaded.');
+  }, [data, showToast]);
 
-  const handleImport = useCallback(async (file: File) => {
-    try {
-      const text = await file.text();
-      const imported = parseImportFile(text);
-      if (!imported) {
-        setToast('Invalid backup file. Please use a FinancePlanner JSON export.');
-        return;
+  const handleImport = useCallback(
+    async (file: File) => {
+      try {
+        const text = await file.text();
+        const imported = parseImportFile(text);
+        if (!imported) {
+          showToast('Invalid backup file. Please use a FinancePlanner JSON export.');
+          return;
+        }
+        if (
+          !window.confirm(
+            'Import this backup? It will replace your current data in this browser.',
+          )
+        ) {
+          return;
+        }
+        const snapshot = data;
+        setData(imported);
+        navigate('dashboard');
+        notifyUndo('Backup imported.', snapshot);
+      } catch {
+        showToast('Could not read the file. Please try again.');
       }
-      if (
-        !window.confirm(
-          'Import this backup? It will replace your current data in this browser.',
-        )
-      ) {
-        return;
-      }
-      setData(imported);
-      setPage('dashboard');
-      setToast('Backup imported successfully.');
-    } catch {
-      setToast('Could not read the file. Please try again.');
-    }
-  }, []);
+    },
+    [data, setData, navigate, notifyUndo, showToast],
+  );
 
   const handleReset = useCallback(() => {
+    const snapshot = data;
     clearAllStorage();
     setData(defaultData);
-    setPage('dashboard');
+    navigate('dashboard');
     setLastSaved(null);
-    setToast('All data has been reset.');
-  }, []);
-
-  if (showOnboarding) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
-  }
+    notifyUndo('All data has been reset.', snapshot);
+  }, [data, setData, navigate, setLastSaved, notifyUndo]);
 
   return (
     <>
@@ -163,12 +196,11 @@ export default function App() {
       </Layout>
 
       {toast && (
-        <div
-          role="status"
-          className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-lg max-w-[90vw] text-center"
-        >
-          {toast}
-        </div>
+        <Toast
+          message={toast.message}
+          onUndo={toast.onUndo}
+          onDismiss={dismissToast}
+        />
       )}
     </>
   );

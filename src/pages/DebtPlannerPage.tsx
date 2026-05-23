@@ -20,6 +20,8 @@ import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { FormAlerts } from '../components/FormAlerts';
 import { ChartContainer } from '../components/ChartContainer';
+import { useAppActions } from '../context/AppActionsContext';
+import { useChartTheme } from '../hooks/useChartTheme';
 import {
   LineChart,
   Line,
@@ -49,6 +51,8 @@ function emptyDebt(): Omit<Debt, 'id'> {
 }
 
 export function DebtPlannerPage({ debts, onChange }: Props) {
+  const { data, notifyUndo } = useAppActions();
+  const chart = useChartTheme();
   const [form, setForm] = useState<Omit<Debt, 'id'>>(emptyDebt());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedDebtId, setSelectedDebtId] = useState<string | null>(null);
@@ -117,8 +121,11 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
   }
 
   function handleDelete(id: string) {
+    const item = debts.find((d) => d.id === id);
+    const snapshot = data;
     onChange(debts.filter((d) => d.id !== id));
     if (selectedDebtId === id) setSelectedDebtId(debts.find((d) => d.id !== id)?.id ?? null);
+    notifyUndo(item ? `"${item.name}" removed.` : 'Debt removed.', snapshot);
   }
 
   const selectedDebt = debts.find((d) => d.id === selectedDebtId) ?? debts[0] ?? null;
@@ -223,7 +230,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                 </span>
               }
             />
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {debts.map((debt) => (
                 <div key={debt.id} className="py-3 flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -231,7 +238,9 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                       type="button"
                       onClick={() => setSelectedDebtId(debt.id)}
                       className={`font-medium truncate cursor-pointer ${
-                        selectedDebt?.id === debt.id ? 'text-indigo-600' : 'text-slate-800'
+                        selectedDebt?.id === debt.id
+                          ? 'text-indigo-600 dark:text-indigo-400'
+                          : 'text-slate-800 dark:text-slate-100'
                       }`}
                     >
                       {debt.name}
@@ -274,11 +283,13 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                   <div
                     key={result.strategy}
                     className={`rounded-xl p-4 border-2 ${
-                      isBest ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-100 bg-slate-50/50'
+                      isBest
+                        ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30'
+                        : 'border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <p className="font-semibold text-sm text-slate-800">
+                      <p className="font-semibold text-sm text-slate-800 dark:text-slate-100">
                         {STRATEGY_LABELS[result.strategy]}
                       </p>
                       {isBest && (
@@ -309,10 +320,10 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
               <ChartContainer height={260}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={comparisonChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `Mo ${v}`} />
-                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), '']} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `Mo ${v}`} />
+                  <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), '']} contentStyle={chart.tooltip.contentStyle} />
                   <Legend />
                   {STRATEGIES.map((s) => (
                     <Line
@@ -344,10 +355,10 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
               <ChartContainer height={200}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={singleChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Balance']} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: chart.tick }} />
+                  <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Balance']} contentStyle={chart.tooltip.contentStyle} />
                   <Line type="monotone" dataKey="balance" stroke="#6366f1" strokeWidth={2} dot={false} name="Balance" />
                 </LineChart>
               </ResponsiveContainer>

@@ -14,11 +14,11 @@ export function MetricRow({ label, value, format = 'currency', highlight }: Metr
       : String(value);
 
   return (
-    <div className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
-      <span className="text-sm text-slate-600">{label}</span>
+    <div className="flex justify-between items-center py-2 border-b border-slate-50 dark:border-slate-800 last:border-0">
+      <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
       <span
         className={`text-sm font-semibold tabular-nums ${
-          highlight ? 'text-indigo-600' : 'text-slate-800'
+          highlight ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-800 dark:text-slate-100'
         }`}
       >
         {display}

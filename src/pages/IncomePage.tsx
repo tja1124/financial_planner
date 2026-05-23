@@ -15,6 +15,7 @@ import { Input, Select } from '../components/Input';
 import { PageHeader } from '../components/PageHeader';
 import { FormAlerts } from '../components/FormAlerts';
 import { EmptyState } from '../components/EmptyState';
+import { useAppActions } from '../context/AppActionsContext';
 
 const FREQUENCY_OPTIONS = [
   { value: 'monthly', label: 'Monthly' },
@@ -33,6 +34,7 @@ function emptySource(): Omit<IncomeSource, 'id'> {
 }
 
 export function IncomePage({ income, onChange }: Props) {
+  const { data, notifyUndo } = useAppActions();
   const [form, setForm] = useState<Omit<IncomeSource, 'id'>>(emptySource());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [validation, setValidation] = useState(emptyValidation());
@@ -62,7 +64,13 @@ export function IncomePage({ income, onChange }: Props) {
   }
 
   function handleDelete(id: string) {
+    const item = income.find((s) => s.id === id);
+    const snapshot = data;
     onChange(income.filter((s) => s.id !== id));
+    notifyUndo(
+      item ? `"${item.name}" removed.` : 'Income source removed.',
+      snapshot,
+    );
   }
 
   function handleCancel() {
@@ -131,15 +139,15 @@ export function IncomePage({ income, onChange }: Props) {
               </span>
             }
           />
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {income.map((source) => (
               <div
                 key={source.id}
                 className="flex flex-col sm:flex-row sm:items-center justify-between py-4 gap-3"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-800 truncate">{source.name}</p>
-                  <p className="text-xs text-slate-500 capitalize mt-0.5">
+                  <p className="font-medium text-slate-800 dark:text-slate-100 truncate">{source.name}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 capitalize mt-0.5">
                     {formatCurrency(source.amount)} {source.frequency} ·{' '}
                     {formatCurrency(toMonthly(source.amount, source.frequency))}/mo
                   </p>
