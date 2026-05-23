@@ -265,7 +265,7 @@ export function SavingsGoalsPage({
                   </div>
                 </div>
 
-                <div className="mb-1">
+                <div>
                   <div className="flex justify-between text-sm mb-1.5">
                     <span className="font-medium text-primary">{formatCurrency(goal.currentAmount)}</span>
                     <span className="text-secondary">{formatCurrency(goal.targetAmount)}</span>

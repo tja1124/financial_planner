@@ -105,7 +105,7 @@ export function EmergencyFundCard({
           />
         </div>
 
-        <div className="mb-2">
+        <div>
           <div className="flex justify-between text-sm mb-2">
             <span className="font-medium text-primary tabular-nums">
               {formatCurrency(emergencyFund.currentAmount)}
@@ -128,19 +128,7 @@ export function EmergencyFundCard({
           </div>
         </div>
 
-        <SavingsContributionControls
-          monthlyContribution={emergencyFund.monthlyContribution}
-          onMonthlyChange={(amount) =>
-            onChange({ ...emergencyFund, monthlyContribution: amount })
-          }
-          onOneTimeDeposit={onContribute}
-          targetAmount={target}
-          currentAmount={emergencyFund.currentAmount}
-          discretionaryIncome={discretionary}
-          depositLabel="One-time deposit"
-        />
-
-        <div className="flex flex-wrap items-center gap-2 pt-3">
+        <div className="flex flex-wrap items-center gap-2 mt-3">
           <button
             type="button"
             className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer accent-ring rounded"
@@ -154,6 +142,17 @@ export function EmergencyFundCard({
             Set target to 3× essentials
           </button>
         </div>
+
+        <SavingsContributionControls
+          monthlyContribution={emergencyFund.monthlyContribution}
+          onMonthlyChange={(amount) =>
+            onChange({ ...emergencyFund, monthlyContribution: amount })
+          }
+          onOneTimeDeposit={onContribute}
+          targetAmount={target}
+          currentAmount={emergencyFund.currentAmount}
+          discretionaryIncome={discretionary}
+        />
       </div>
     </section>
   );
