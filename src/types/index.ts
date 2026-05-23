@@ -1,8 +1,29 @@
+/** Tax assumptions used when an income source is entered as gross pay. */
+export interface TaxProfile {
+  /** Effective federal income tax rate as a percentage, e.g. 14 for 14%. */
+  federalRate: number;
+  /** Effective state income tax rate as a percentage, e.g. 5.39 for 5.39%. */
+  stateRate: number;
+  /** FICA (Social Security + Medicare) rate as a percentage, e.g. 7.65. */
+  ficaRate: number;
+  /** Monthly pre-tax deductions in dollars (401k, HSA, etc.). */
+  pretaxDeductionsMonthly: number;
+  /** Monthly post-tax deductions in dollars. */
+  posttaxDeductionsMonthly: number;
+}
+
 export interface IncomeSource {
   id: string;
   name: string;
   amount: number;
   frequency: 'monthly' | 'biweekly' | 'weekly' | 'annually';
+  /**
+   * When false (default) the entered amount is treated as net take-home pay.
+   * When true, the tax estimation layer derives net from the gross amount.
+   */
+  isGross?: boolean;
+  /** Tax assumptions applied when isGross is true. */
+  taxProfile?: TaxProfile;
 }
 
 export interface Expense {

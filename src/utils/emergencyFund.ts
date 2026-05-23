@@ -1,4 +1,5 @@
 import type { AppData, EmergencyFund, Expense, SavingsGoal } from '../types';
+import { normalizeIncomeSource } from './taxEstimation';
 
 export const EMERGENCY_FUND_ID = 'emergency-fund' as const;
 
@@ -85,7 +86,7 @@ export function normalizeAppData(raw: {
   savingsGoals?: SavingsGoal[];
   emergencyFund?: Partial<EmergencyFund>;
 }): AppData {
-  const income = raw.income ?? [];
+  const income = (raw.income ?? []).map((s) => normalizeIncomeSource(s));
   const expenses = raw.expenses ?? [];
   const debts = raw.debts ?? [];
   let savingsGoals = [...(raw.savingsGoals ?? [])];

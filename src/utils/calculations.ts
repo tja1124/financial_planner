@@ -7,6 +7,7 @@ import type {
   FinancialSummary,
 } from '../types';
 import { totalPlannedMonthlySavings } from './savingsContributions';
+import { estimateNetMonthly } from './taxEstimation';
 
 export function toMonthly(amount: number, frequency: IncomeSource['frequency']): number {
   switch (frequency) {
@@ -18,7 +19,7 @@ export function toMonthly(amount: number, frequency: IncomeSource['frequency']):
 }
 
 export function totalMonthlyIncome(sources: IncomeSource[]): number {
-  return sources.reduce((sum, s) => sum + toMonthly(s.amount, s.frequency), 0);
+  return sources.reduce((sum, s) => sum + estimateNetMonthly(s), 0);
 }
 
 export function totalMonthlyExpenses(expenses: Expense[]): number {
