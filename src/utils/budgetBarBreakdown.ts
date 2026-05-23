@@ -115,10 +115,7 @@ export function buildBudgetBarData(
       name: 'Leftover',
       amount: Math.max(0, monthlyLeftover),
       fill: fills.leftover,
-      lines:
-        monthlyLeftover > 0
-          ? [{ name: 'After obligations', amount: monthlyLeftover }]
-          : [],
+      lines: [],
     },
   ].filter((d) => d.amount > 0);
 }

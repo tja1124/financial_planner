@@ -24,6 +24,7 @@ import {
   crudFormCardClass,
   crudListItemClass,
 } from '../components/CrudPageLayout';
+import { CrudEditingBadge } from '../components/CrudEditingBadge';
 import { EmptyState } from '../components/EmptyState';
 import { FormAlerts } from '../components/FormAlerts';
 import { ChartContainer } from '../components/ChartContainer';
@@ -175,9 +176,11 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
 
       <CrudPageLayout
         editingActive={!!editingId}
+        editingKey={editingId}
         form={
       <Card className={crudFormCardClass(!!editingId)}>
         <CardHeader title={editingId ? 'Edit Debt' : 'Add Debt'} />
+        {editingId && <CrudEditingBadge name={form.name} />}
         <FormAlerts validation={validation} />
         <div className="grid grid-cols-1 gap-3 sm:gap-4">
           <Input

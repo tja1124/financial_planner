@@ -1,4 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import {
+  CRUD_LAYOUT_GRID_CLASS,
+  CRUD_STICKY_PANEL_CLASS,
+} from './crudStickyLayout';
 
 interface Props {
   form: ReactNode;
@@ -7,38 +11,62 @@ interface Props {
   after?: ReactNode;
   /** Scroll form into view on narrow screens when editing starts */
   editingActive?: boolean;
+  /** Changes when a different item is selected for edit — triggers subtle form attention */
+  editingKey?: string | null;
   className?: string;
 }
 
 /**
- * Desktop/tablet: sticky compact form (left) + primary list (right).
- * Mobile: stacked form then list.
+ * Desktop (lg+): sticky form with viewport-centered offset + scrollable panel.
+ * Mobile: stacked layout, no sticky.
  */
 export function CrudPageLayout({
   form,
   list,
   after,
   editingActive = false,
+  editingKey = null,
   className = '',
 }: Props) {
   const formRef = useRef<HTMLDivElement>(null);
+  const wasEditingRef = useRef(false);
+  const prevEditingKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!editingActive || !formRef.current) return;
+    if (!editingActive) {
+      wasEditingRef.current = false;
+      prevEditingKeyRef.current = null;
+      return;
+    }
+
+    const enteringEdit = !wasEditingRef.current;
+    const switchingItem =
+      editingKey != null &&
+      prevEditingKeyRef.current != null &&
+      editingKey !== prevEditingKeyRef.current;
+
+    wasEditingRef.current = true;
+    prevEditingKeyRef.current = editingKey;
+
+    const el = formRef.current;
+    if (!el) return;
+
+    if (enteringEdit || switchingItem) {
+      el.classList.remove('crud-form-attention');
+      void el.offsetWidth;
+      el.classList.add('crud-form-attention');
+    }
+
     const narrow = window.matchMedia('(max-width: 1023px)');
-    if (!narrow.matches) return;
-    formRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [editingActive]);
+    if (narrow.matches && (enteringEdit || switchingItem)) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [editingActive, editingKey]);
 
   return (
     <>
-      <div
-        className={`grid grid-cols-1 lg:grid-cols-[minmax(272px,300px)_1fr] gap-4 lg:gap-6 items-start ${className}`}
-      >
-        <div
-          ref={formRef}
-          className="lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100dvh-5.5rem)] lg:overflow-y-auto lg:overscroll-contain"
-        >
+      <div className={`${CRUD_LAYOUT_GRID_CLASS} ${className}`}>
+        <div ref={formRef} className={CRUD_STICKY_PANEL_CLASS}>
           {form}
         </div>
         <div className="min-w-0">{list}</div>

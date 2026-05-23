@@ -6,17 +6,15 @@ import { Card, CardHeader } from '../components/Card';
 import { ChartContainer } from '../components/ChartContainer';
 import { ChartTooltip } from '../components/charts/ChartTooltip';
 import { BudgetBarTooltip } from '../components/charts/BudgetBarTooltip';
-import { PieChartTooltip } from '../components/charts/PieChartTooltip';
+import { ExpenseCategoryPieChart } from '../components/charts/ExpenseCategoryPieChart';
 import { buildBudgetBarData } from '../utils/budgetBarBreakdown';
 import { FadeIn } from '../components/motion/FadeIn';
 import { useChartTheme } from '../hooks/useChartTheme';
 import {
-  PieChart,
-  Pie,
-  Cell,
   Tooltip,
   BarChart,
   Bar,
+  Cell,
   Line,
   XAxis,
   YAxis,
@@ -186,25 +184,7 @@ export const DashboardCharts = memo(function DashboardCharts({
             <Card>
               <CardHeader title="Expenses by Category" />
               <ChartContainer height={chartHeight.sm}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={expensePieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={82}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {expensePieData.map((_, i) => (
-                        <Cell key={i} fill={chart.pieColor(i)} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<PieChartTooltip />} />
-                    <Legend wrapperStyle={chart.legendStyle} iconType="circle" iconSize={8} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <ExpenseCategoryPieChart data={expensePieData} chart={chart} />
               </ChartContainer>
             </Card>
           </FadeIn>

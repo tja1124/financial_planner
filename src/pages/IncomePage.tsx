@@ -29,6 +29,7 @@ import {
   crudFormCardClass,
   crudListItemClass,
 } from '../components/CrudPageLayout';
+import { CrudEditingBadge } from '../components/CrudEditingBadge';
 import { useAppActions } from '../context/AppActionsContext';
 import { EMPTY_STATE_ICONS } from '../components/icons';
 
@@ -152,9 +153,11 @@ export function IncomePage({ income, onChange }: Props) {
 
       <CrudPageLayout
         editingActive={!!editingId}
+        editingKey={editingId}
         form={
       <Card data-tour="income-form" className={crudFormCardClass(!!editingId)}>
         <CardHeader title={editingId ? 'Edit Income Source' : 'Add Income Source'} />
+        {editingId && <CrudEditingBadge name={form.name} />}
         <FormAlerts validation={validation} />
 
         <div className="grid grid-cols-1 gap-3 sm:gap-4">

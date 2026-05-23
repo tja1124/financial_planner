@@ -524,6 +524,61 @@
   box-shadow: 0 0 0 5px rgb(129 140 248 / 0.18) !important;
 }
 
+/* ── CRUD sticky form panel (lg+ only) ── */
+.crud-sticky-form-panel {
+  border-radius: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .crud-sticky-form-panel {
+    position: sticky;
+    top: clamp(96px, 14vh, 180px);
+    align-self: start;
+    max-height: calc(100dvh - clamp(96px, 14vh, 180px) - 1.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* ── CRUD form attention (edit mode) ── */
+@keyframes crud-form-attention {
+  0% {
+    box-shadow: 0 0 0 0 rgb(99 102 241 / 0);
+  }
+  40% {
+    box-shadow: 0 0 0 3px rgb(99 102 241 / 0.22);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(99 102 241 / 0);
+  }
+}
+
+.crud-form-attention {
+  animation: crud-form-attention 0.55s ease-out;
+}
+
+.dark .crud-form-attention {
+  animation-name: crud-form-attention-dark;
+}
+
+@keyframes crud-form-attention-dark {
+  0% {
+    box-shadow: 0 0 0 0 rgb(129 140 248 / 0);
+  }
+  40% {
+    box-shadow: 0 0 0 3px rgb(129 140 248 / 0.28);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(129 140 248 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crud-form-attention {
+    animation: none;
+  }
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .driver-popover,

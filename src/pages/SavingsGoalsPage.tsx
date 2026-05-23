@@ -25,6 +25,7 @@ import {
   crudFormCardClass,
   crudListItemClass,
 } from '../components/CrudPageLayout';
+import { CrudEditingBadge } from '../components/CrudEditingBadge';
 import { useAppActions } from '../context/AppActionsContext';
 import { EMPTY_STATE_ICONS } from '../components/icons';
 import { CheckCircle2 } from 'lucide-react';
@@ -166,9 +167,11 @@ export function SavingsGoalsPage({
 
         <CrudPageLayout
           editingActive={!!editingId}
+          editingKey={editingId}
           form={
         <Card className={crudFormCardClass(!!editingId)}>
           <CardHeader title={editingId ? 'Edit Savings Goal' : 'Add Savings Goal'} />
+          {editingId && <CrudEditingBadge name={form.name} />}
           <FormAlerts validation={validation} />
           <div className="grid grid-cols-1 gap-3 sm:gap-4">
             <Input

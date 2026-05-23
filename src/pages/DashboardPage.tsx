@@ -221,12 +221,20 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
             <CardHeader title="Savings Goals" />
             <div className="space-y-4">
               {data.savingsGoals.map((goal) => {
-                const pct = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
+                const pct =
+                  goal.targetAmount > 0
+                    ? Math.min(100, (goal.currentAmount / goal.targetAmount) * 100)
+                    : 0;
                 return (
                   <div key={goal.id}>
-                    <div className="flex justify-between text-sm mb-1.5">
-                      <span className="font-medium text-primary">{goal.name}</span>
-                      <span className="text-secondary tabular-nums">
+                    <div className="flex justify-between items-baseline gap-3 text-sm mb-1.5">
+                      <div className="min-w-0">
+                        <span className="font-medium text-primary">{goal.name}</span>
+                        <span className="block text-xs text-muted mt-0.5">
+                          {pct >= 100 ? 'Goal reached' : `${pct.toFixed(0)}% of target`}
+                        </span>
+                      </div>
+                      <span className="text-secondary tabular-nums shrink-0 text-right">
                         {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
                       </span>
                     </div>

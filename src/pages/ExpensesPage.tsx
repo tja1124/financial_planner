@@ -25,6 +25,7 @@ import {
   crudFormCardClass,
   crudListItemClass,
 } from '../components/CrudPageLayout';
+import { CrudEditingBadge } from '../components/CrudEditingBadge';
 import { useAppActions } from '../context/AppActionsContext';
 import { AppIcon, EXPENSE_CATEGORY_ICONS, EMPTY_STATE_ICONS, IconTile } from '../components/icons';
 import { Calendar, CheckCircle2, X } from 'lucide-react';
@@ -268,9 +269,11 @@ export function ExpensesPage({ expenses, onChange }: Props) {
 
       <CrudPageLayout
         editingActive={!!editingId}
+        editingKey={editingId}
         form={
       <Card data-tour="expense-mode-toggle" className={crudFormCardClass(!!editingId)}>
         <CardHeader title={editingId ? 'Edit Expense' : 'Add Expense'} />
+        {editingId && <CrudEditingBadge name={form.name} />}
 
         <div className="flex flex-wrap gap-2 mb-4">
           <ModeChip active={mode === 'recurring'} onClick={() => switchMode('recurring')}>
