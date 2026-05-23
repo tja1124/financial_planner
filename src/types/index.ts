@@ -50,6 +50,8 @@ export interface SavingsGoal {
   targetAmount: number;
   currentAmount: number;
   targetDate: string;
+  /** Planned recurring monthly contribution (not a one-time deposit). */
+  monthlyContribution: number;
 }
 
 /** Built-in emergency reserve — always present, not deletable. */
@@ -58,6 +60,8 @@ export interface EmergencyFund {
   name: string;
   currentAmount: number;
   targetAmount: number;
+  /** Planned recurring monthly contribution (not a one-time deposit). */
+  monthlyContribution: number;
 }
 
 export interface AppData {

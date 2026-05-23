@@ -112,8 +112,15 @@ function AppMain({
   const { notifyUndo, showToast, toast, dismissToast } = useAppActions();
 
   const summary = useMemo(
-    () => computeSummary(data.income, data.expenses, data.debts, data.savingsGoals),
-    [data.income, data.expenses, data.debts, data.savingsGoals],
+    () =>
+      computeSummary(
+        data.income,
+        data.expenses,
+        data.debts,
+        data.emergencyFund,
+        data.savingsGoals,
+      ),
+    [data.income, data.expenses, data.debts, data.emergencyFund, data.savingsGoals],
   );
 
   const setDataField = useCallback(
@@ -222,7 +229,9 @@ function AppMain({
         {page === 'savings' && (
           <SavingsGoalsPage
             emergencyFund={data.emergencyFund}
+            income={data.income}
             expenses={data.expenses}
+            debts={data.debts}
             savingsGoals={data.savingsGoals}
             onEmergencyFundChange={setDataField('emergencyFund')}
             onChange={setDataField('savingsGoals')}

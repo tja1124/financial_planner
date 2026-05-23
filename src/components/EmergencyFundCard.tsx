@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import type { EmergencyFund, Expense } from '../types';
+import type { EmergencyFund, Expense, Debt, IncomeSource } from '../types';
 import { formatCurrency } from '../utils/calculations';
+import { monthlyDiscretionaryIncome } from '../utils/savingsContributions';
 import {
   computeEmergencyRunwayMonths,
   defaultEmergencyTarget,
@@ -8,13 +8,15 @@ import {
 } from '../utils/emergencyFund';
 import { parseNonNegativeInput } from '../utils/validation';
 import { Shield } from 'lucide-react';
-import { Button } from './Button';
 import { Input } from './Input';
 import { IconTile } from './icons/IconTile';
+import { SavingsContributionControls } from './SavingsContributionControls';
 
 interface Props {
   emergencyFund: EmergencyFund;
   expenses: Expense[];
+  income: IncomeSource[];
+  debts: Debt[];
   onChange: (fund: EmergencyFund) => void;
   onContribute: (amount: number) => void;
 }
@@ -22,12 +24,11 @@ interface Props {
 export function EmergencyFundCard({
   emergencyFund,
   expenses,
+  income,
+  debts,
   onChange,
   onContribute,
 }: Props) {
-  const [contribOpen, setContribOpen] = useState(false);
-  const [contribAmount, setContribAmount] = useState('');
-
   const runway = computeEmergencyRunwayMonths(emergencyFund, expenses);
   const status = getEmergencyFundStatus(runway);
   const target =
@@ -37,21 +38,14 @@ export function EmergencyFundCard({
   const pct =
     target > 0 ? Math.min(100, (emergencyFund.currentAmount / target) * 100) : 0;
 
+  const discretionary = monthlyDiscretionaryIncome(income, expenses, debts);
+
   const statusColors: Record<typeof status.tone, string> = {
     vulnerable: 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/20',
     building: 'text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/20',
     healthy: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/20',
     strong: 'text-teal-700 dark:text-teal-300 bg-teal-500/10 border-teal-500/20',
   };
-
-  function handleContribute() {
-    const val = parseFloat(contribAmount);
-    if (val > 0) {
-      onContribute(val);
-      setContribAmount('');
-      setContribOpen(false);
-    }
-  }
 
   return (
     <section className="emergency-fund-card overflow-hidden">
@@ -111,7 +105,7 @@ export function EmergencyFundCard({
           />
         </div>
 
-        <div className="mb-4">
+        <div className="mb-2">
           <div className="flex justify-between text-sm mb-2">
             <span className="font-medium text-primary tabular-nums">
               {formatCurrency(emergencyFund.currentAmount)}
@@ -134,35 +128,22 @@ export function EmergencyFundCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-[var(--border-subtle)]">
-          {!contribOpen ? (
-            <Button size="sm" variant="secondary" onClick={() => setContribOpen(true)}>
-              + Add contribution
-            </Button>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <input
-                type="number"
-                min={0}
-                step={50}
-                placeholder="Amount"
-                value={contribAmount}
-                onChange={(e) => setContribAmount(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleContribute()}
-                autoFocus
-                className="w-28 rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] text-primary text-sm py-2 px-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-              />
-              <Button size="sm" onClick={handleContribute}>
-                Save
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setContribOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          )}
-          <Button
-            size="sm"
-            variant="ghost"
+        <SavingsContributionControls
+          monthlyContribution={emergencyFund.monthlyContribution}
+          onMonthlyChange={(amount) =>
+            onChange({ ...emergencyFund, monthlyContribution: amount })
+          }
+          onOneTimeDeposit={onContribute}
+          targetAmount={target}
+          currentAmount={emergencyFund.currentAmount}
+          discretionaryIncome={discretionary}
+          depositLabel="One-time deposit"
+        />
+
+        <div className="flex flex-wrap items-center gap-2 pt-3">
+          <button
+            type="button"
+            className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer accent-ring rounded"
             onClick={() =>
               onChange({
                 ...emergencyFund,
@@ -171,7 +152,7 @@ export function EmergencyFundCard({
             }
           >
             Set target to 3× essentials
-          </Button>
+          </button>
         </div>
       </div>
     </section>

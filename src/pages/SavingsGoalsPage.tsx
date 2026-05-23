@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { EmergencyFund, Expense, SavingsGoal } from '../types';
+import type { EmergencyFund, Expense, Debt, IncomeSource, SavingsGoal } from '../types';
 import { generateId } from '../utils/storage';
 import { formatCurrency, monthsUntil } from '../utils/calculations';
 import { isEmergencyGoalName } from '../utils/emergencyFund';
+import { monthlyDiscretionaryIncome } from '../utils/savingsContributions';
 import {
   validateSavingsGoal,
   parseNonNegativeInput,
@@ -17,13 +18,17 @@ import { PageHeader } from '../components/PageHeader';
 import { FormAlerts } from '../components/FormAlerts';
 import { EmptyState } from '../components/EmptyState';
 import { EmergencyFundCard } from '../components/EmergencyFundCard';
+import { SavingsContributionControls } from '../components/SavingsContributionControls';
 import { useAppActions } from '../context/AppActionsContext';
-import { AppIcon, EMPTY_STATE_ICONS } from '../components/icons';
-import { CheckCircle2, X } from 'lucide-react';
+import { EMPTY_STATE_ICONS } from '../components/icons';
+import { CheckCircle2 } from 'lucide-react';
+import { AppIcon } from '../components/icons';
 
 interface Props {
   emergencyFund: EmergencyFund;
+  income: IncomeSource[];
   expenses: Expense[];
+  debts: Debt[];
   savingsGoals: SavingsGoal[];
   onEmergencyFundChange: (fund: EmergencyFund) => void;
   onChange: (goals: SavingsGoal[]) => void;
@@ -37,12 +42,15 @@ function emptyGoal(): Omit<SavingsGoal, 'id'> {
     targetAmount: 0,
     currentAmount: 0,
     targetDate: sixMonths.toISOString().split('T')[0],
+    monthlyContribution: 0,
   };
 }
 
 export function SavingsGoalsPage({
   emergencyFund,
+  income,
   expenses,
+  debts,
   savingsGoals,
   onEmergencyFundChange,
   onChange,
@@ -51,6 +59,8 @@ export function SavingsGoalsPage({
   const [form, setForm] = useState<Omit<SavingsGoal, 'id'>>(emptyGoal());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [validation, setValidation] = useState(emptyValidation());
+
+  const discretionary = monthlyDiscretionaryIncome(income, expenses, debts);
 
   function handleAdd() {
     const nameCheck = isEmergencyGoalName(form.name)
@@ -84,6 +94,7 @@ export function SavingsGoalsPage({
       targetAmount: goal.targetAmount,
       currentAmount: goal.currentAmount,
       targetDate: goal.targetDate,
+      monthlyContribution: goal.monthlyContribution,
     });
     setValidation(emptyValidation());
   }
@@ -113,7 +124,11 @@ export function SavingsGoalsPage({
         ? Math.min(emergencyFund.targetAmount, uncapped)
         : uncapped;
     onEmergencyFundChange({ ...emergencyFund, currentAmount: next });
-    notifyUndo(`Added ${formatCurrency(amount)} to Emergency Fund.`, snapshot);
+    notifyUndo(`Deposited ${formatCurrency(amount)} to Emergency Fund.`, snapshot);
+  }
+
+  function updateGoal(id: string, patch: Partial<SavingsGoal>) {
+    onChange(savingsGoals.map((g) => (g.id === id ? { ...g, ...patch } : g)));
   }
 
   return (
@@ -126,6 +141,8 @@ export function SavingsGoalsPage({
       <EmergencyFundCard
         emergencyFund={emergencyFund}
         expenses={expenses}
+        income={income}
+        debts={debts}
         onChange={onEmergencyFundChange}
         onContribute={handleEmergencyContribute}
       />
@@ -138,7 +155,7 @@ export function SavingsGoalsPage({
         <Card>
           <CardHeader title={editingId ? 'Edit Goal' : 'Add Savings Goal'} />
           <FormAlerts validation={validation} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
             <Input
               label="Goal name"
               placeholder="e.g. Vacation, Wedding"
@@ -175,7 +192,26 @@ export function SavingsGoalsPage({
               value={form.targetDate}
               onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
             />
+            <Input
+              label="Monthly contribution"
+              type="number"
+              min={0}
+              step={25}
+              placeholder="0"
+              prefix="$"
+              value={form.monthlyContribution || ''}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  monthlyContribution: parseNonNegativeInput(e.target.value),
+                })
+              }
+            />
           </div>
+          <p className="text-xs text-muted mt-3">
+            Monthly contribution is your planned recurring amount. Use one-time deposits on each goal
+            card to add money now.
+          </p>
           <div className="flex flex-col sm:flex-row gap-2 mt-5">
             <Button onClick={handleAdd}>{editingId ? 'Save Changes' : '+ Add Goal'}</Button>
             {editingId && (
@@ -197,11 +233,12 @@ export function SavingsGoalsPage({
       {savingsGoals.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {savingsGoals.map((goal) => {
-            const pct = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
-            const remaining = Math.max(0, goal.targetAmount - goal.currentAmount);
+            const progress =
+              goal.targetAmount > 0
+                ? Math.min(100, (goal.currentAmount / goal.targetAmount) * 100)
+                : 0;
             const months = monthsUntil(goal.targetDate);
-            const monthlyNeeded = months > 0 ? remaining / months : remaining;
-            const isComplete = pct >= 100;
+            const isComplete = progress >= 100;
             const isPast = months < 0 && !isComplete;
 
             return (
@@ -228,7 +265,7 @@ export function SavingsGoalsPage({
                   </div>
                 </div>
 
-                <div className="mb-3">
+                <div className="mb-1">
                   <div className="flex justify-between text-sm mb-1.5">
                     <span className="font-medium text-primary">{formatCurrency(goal.currentAmount)}</span>
                     <span className="text-secondary">{formatCurrency(goal.targetAmount)}</span>
@@ -238,24 +275,24 @@ export function SavingsGoalsPage({
                       className={`h-full rounded-full transition-all duration-500 ${
                         isComplete ? 'bg-emerald-500' : isPast ? 'bg-red-400' : 'bg-indigo-500'
                       }`}
-                      style={{ width: `${pct}%` }}
+                      style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <p className="text-xs text-muted mt-1.5 text-right">{pct.toFixed(0)}% complete</p>
+                  <p className="text-xs text-muted mt-1.5 text-right">{progress.toFixed(0)}% complete</p>
                 </div>
 
                 {!isComplete && (
-                  <div className="flex items-center justify-between pt-3 border-t divider">
-                    <div>
-                      <p className="text-xs text-muted">Monthly needed</p>
-                      <p
-                        className={`text-sm font-semibold ${isPast ? 'text-red-500' : 'text-indigo-600 dark:text-indigo-400'}`}
-                      >
-                        {formatCurrency(monthlyNeeded)}/mo
-                      </p>
-                    </div>
-                    <DepositButton onDeposit={(amt) => handleDeposit(goal.id, amt)} />
-                  </div>
+                  <SavingsContributionControls
+                    monthlyContribution={goal.monthlyContribution}
+                    onMonthlyChange={(amount) =>
+                      updateGoal(goal.id, { monthlyContribution: amount })
+                    }
+                    onOneTimeDeposit={(amt) => handleDeposit(goal.id, amt)}
+                    targetAmount={goal.targetAmount}
+                    currentAmount={goal.currentAmount}
+                    targetDate={goal.targetDate}
+                    discretionaryIncome={discretionary}
+                  />
                 )}
 
                 {isComplete && (
@@ -279,50 +316,6 @@ export function SavingsGoalsPage({
           />
         </Card>
       )}
-    </div>
-  );
-}
-
-function DepositButton({ onDeposit }: { onDeposit: (amount: number) => void }) {
-  const [open, setOpen] = useState(false);
-  const [amount, setAmount] = useState('');
-
-  function handleSubmit() {
-    const val = parseFloat(amount);
-    if (val > 0) {
-      onDeposit(val);
-      setAmount('');
-      setOpen(false);
-    }
-  }
-
-  if (!open) {
-    return (
-      <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>
-        + Deposit
-      </Button>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      <input
-        type="number"
-        min={0}
-        step={50}
-        placeholder="Amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        autoFocus
-        className="w-24 rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] text-primary text-sm py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
-      />
-      <Button size="sm" onClick={handleSubmit}>
-        Save
-      </Button>
-      <Button size="sm" variant="ghost" onClick={() => setOpen(false)} aria-label="Cancel">
-        <AppIcon icon={X} size="sm" />
-      </Button>
     </div>
   );
 }

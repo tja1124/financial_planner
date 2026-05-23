@@ -25,6 +25,7 @@ export function createEmptyEmergencyFund(expenses: Expense[]): EmergencyFund {
     name: 'Emergency Fund',
     currentAmount: 0,
     targetAmount: defaultEmergencyTarget(expenses),
+    monthlyContribution: 0,
   };
 }
 
@@ -72,6 +73,7 @@ function coerceEmergencyFund(
     name: 'Emergency Fund',
     currentAmount: Math.max(0, Number(raw?.currentAmount) || 0),
     targetAmount: target,
+    monthlyContribution: Math.max(0, Number(raw?.monthlyContribution) || 0),
   };
 }
 
@@ -102,6 +104,7 @@ export function normalizeAppData(raw: {
         currentAmount: legacy.currentAmount,
         targetAmount:
           legacy.targetAmount > 0 ? legacy.targetAmount : defaultEmergencyTarget(expenses),
+        monthlyContribution: Math.max(0, Number(legacy.monthlyContribution) || 0),
       };
     } else if (legacy.targetAmount > emergencyFund.targetAmount) {
       emergencyFund = {
@@ -113,6 +116,11 @@ export function normalizeAppData(raw: {
   }
 
   savingsGoals = savingsGoals.filter((g) => !isEmergencyGoalName(g.name));
+
+  savingsGoals = savingsGoals.map((g) => ({
+    ...g,
+    monthlyContribution: Math.max(0, Number(g.monthlyContribution) || 0),
+  }));
 
   if (!emergencyFund) {
     emergencyFund = createEmptyEmergencyFund(expenses);

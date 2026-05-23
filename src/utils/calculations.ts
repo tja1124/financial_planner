@@ -2,9 +2,11 @@ import type {
   IncomeSource,
   Expense,
   Debt,
+  EmergencyFund,
   SavingsGoal,
   FinancialSummary,
 } from '../types';
+import { totalPlannedMonthlySavings } from './savingsContributions';
 
 export function toMonthly(amount: number, frequency: IncomeSource['frequency']): number {
   switch (frequency) {
@@ -27,6 +29,7 @@ export function totalMonthlyDebtPayments(debts: Debt[]): number {
   return debts.reduce((sum, d) => sum + d.minimumPayment + d.extraPayment, 0);
 }
 
+/** @deprecated Use totalPlannedMonthlySavings — kept for direct goal-only callers. */
 export function totalMonthlySavingsContributions(goals: SavingsGoal[]): number {
   return goals.reduce((sum, g) => {
     if (!g.targetDate) return sum;
@@ -62,12 +65,16 @@ export function computeSummary(
   income: IncomeSource[],
   expenses: Expense[],
   debts: Debt[],
+  emergencyFund: EmergencyFund,
   savingsGoals: SavingsGoal[],
 ): FinancialSummary {
   const totalMonthlyIncomeVal = totalMonthlyIncome(income);
   const totalMonthlyExpensesVal = totalMonthlyExpenses(expenses);
   const totalMonthlyDebtPaymentsVal = totalMonthlyDebtPayments(debts);
-  const totalMonthlySavingsContributionsVal = totalMonthlySavingsContributions(savingsGoals);
+  const totalMonthlySavingsContributionsVal = totalPlannedMonthlySavings(
+    emergencyFund,
+    savingsGoals,
+  );
 
   const monthlyLeftover =
     totalMonthlyIncomeVal -

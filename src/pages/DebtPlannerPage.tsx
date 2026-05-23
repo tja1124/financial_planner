@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { Debt, DebtStrategy } from '../types';
 import { generateId } from '../utils/storage';
-import { formatCurrency, projectDebtPayoff } from '../utils/calculations';
+import { formatCurrency } from '../utils/calculations';
 import {
   simulateDebtStrategy,
   formatPayoffDuration,
@@ -153,16 +153,6 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
   }
 
   const selectedDebt = debts.find((d) => d.id === selectedDebtId) ?? debts[0] ?? null;
-  const payoffData = selectedDebt ? projectDebtPayoff(selectedDebt) : [];
-  const payoffMonths = payoffData.length;
-  const payoffYears = Math.floor(payoffMonths / 12);
-  const payoffRemMonths = payoffMonths % 12;
-  const totalInterest = payoffData.reduce((s, m) => s + m.interest, 0);
-
-  const singleChartData = useMemo(() => {
-    if (!selectedDebt) return [];
-    return buildMultiDebtChartRows([getDebtTimelineSeries(selectedDebt)]);
-  }, [selectedDebt]);
 
   return (
     <div className="page-stack">
@@ -371,8 +361,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             )}
           </Card>
 
-          {debts.length > 1 && (
-            <Card>
+          <Card>
               <CardHeader
                 title="Debt Payoff Over Time"
                 subtitle="Compare individual debt balances (custom payments per debt)"
@@ -432,39 +421,6 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                 </ChartContainer>
               )}
             </Card>
-          )}
-
-          {selectedDebt && payoffData.length > 0 && (
-            <Card>
-              <CardHeader
-                title={`Individual: ${selectedDebt.name}`}
-                subtitle={
-                  payoffYears > 0
-                    ? `Paid off in ${payoffYears}y ${payoffRemMonths}mo · ${formatCurrency(totalInterest)} interest (custom extras)`
-                    : `Paid off in ${payoffMonths} months · ${formatCurrency(totalInterest)} interest`
-                }
-              />
-              <ChartContainer height={200}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={singleChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
-                  <Tooltip content={<ChartTooltip formatLabel={(l) => `Month ${l}`} />} />
-                  <Line
-                    type="monotone"
-                    dataKey={debtChartKey(selectedDebt.id)}
-                    stroke={chart.debtColor(debtIndexById.get(selectedDebt.id) ?? 0)}
-                    strokeWidth={2.5}
-                    dot={false}
-                    connectNulls={false}
-                    name="Balance"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-              </ChartContainer>
-            </Card>
-          )}
         </>
       )}
 

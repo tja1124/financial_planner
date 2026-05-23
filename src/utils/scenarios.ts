@@ -7,11 +7,8 @@ import type {
   Expense,
   SavingsGoal,
 } from '../types';
-import {
-  totalMonthlyIncome,
-  totalMonthlyExpenses,
-  monthsUntil,
-} from './calculations';
+import { totalMonthlyIncome, totalMonthlyExpenses } from './calculations';
+import { totalPlannedMonthlySavings } from './savingsContributions';
 import { simulateDebtStrategy } from './debtStrategies';
 import { defaultEmergencyTarget } from './emergencyFund';
 
@@ -59,14 +56,12 @@ function adjustedDebts(debts: Debt[], extraPayment: number): Debt[] {
   }));
 }
 
-function adjustedSavings(goals: SavingsGoal[], multiplier: number): number {
-  return goals.reduce((sum, g) => {
-    if (!g.targetDate) return sum;
-    const months = monthsUntil(g.targetDate);
-    if (months <= 0) return sum;
-    const needed = Math.max(0, g.targetAmount - g.currentAmount);
-    return sum + (needed / months) * multiplier;
-  }, 0);
+function adjustedSavings(
+  emergencyFund: AppData['emergencyFund'],
+  goals: SavingsGoal[],
+  multiplier: number,
+): number {
+  return totalPlannedMonthlySavings(emergencyFund, goals) * multiplier;
 }
 
 /** @deprecated Use defaultEmergencyTarget from emergencyFund — kept for imports. */
@@ -95,6 +90,7 @@ export function evaluateScenario(
   const income = totalMonthlyIncome(data.income);
   const expenseTotal = totalMonthlyExpenses(expenses);
   const savingsContribution = adjustedSavings(
+    data.emergencyFund,
     data.savingsGoals,
     adjustments.savingsMultiplier,
   );
@@ -111,12 +107,15 @@ export function evaluateScenario(
   const ef = data.emergencyFund;
   const emergencyTarget = ef.targetAmount > 0 ? ef.targetAmount : defaultEmergencyTarget(data.expenses);
   const efGap = Math.max(0, emergencyTarget - ef.currentAmount);
+  const efPlanned = Math.max(0, ef.monthlyContribution ?? 0) * adjustments.savingsMultiplier;
   const efContribution =
-    efGap > 0 && monthlyLeftover > 0
-      ? Math.min(efGap / 12, monthlyLeftover * 0.25) * adjustments.savingsMultiplier
-      : savingsContribution > 0
-        ? savingsContribution * 0.5
-        : Math.max(0, monthlyLeftover * 0.2);
+    efPlanned > 0
+      ? efPlanned
+      : efGap > 0 && monthlyLeftover > 0
+        ? Math.min(efGap / 12, monthlyLeftover * 0.25) * adjustments.savingsMultiplier
+        : savingsContribution > 0
+          ? savingsContribution * 0.5
+          : Math.max(0, monthlyLeftover * 0.2);
 
   const emergencyFundMonths = computeEmergencyFundMonths(
     ef.currentAmount,

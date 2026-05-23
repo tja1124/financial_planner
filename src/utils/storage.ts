@@ -5,7 +5,7 @@ export const STORAGE_KEY = 'finance_planner_data';
 export const ONBOARDING_KEY = 'finance_planner_onboarding_complete';
 export const LAST_SAVED_KEY = 'finance_planner_last_saved';
 
-export const DATA_VERSION = 2;
+export const DATA_VERSION = 3;
 
 export const defaultData: AppData = {
   income: [],

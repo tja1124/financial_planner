@@ -1,5 +1,6 @@
 import type { AppData, CashflowMonth } from '../types';
 import { totalMonthlyIncome, totalMonthlyExpenses } from './calculations';
+import { totalPlannedMonthlySavings } from './savingsContributions';
 import { simulateDebtStrategy } from './debtStrategies';
 
 const MONTH_NAMES = [
@@ -68,15 +69,7 @@ export function projectCashflow(data: AppData, monthCount = 12): CashflowMonth[]
   const expenses = totalMonthlyExpenses(data.expenses);
   const debtPayments = buildDebtPaymentSchedule(data.debts, monthCount);
 
-  const savingsBase = data.savingsGoals.reduce((sum, g) => {
-    const now = new Date();
-    const target = new Date(g.targetDate);
-    const months =
-      (target.getFullYear() - now.getFullYear()) * 12 +
-      (target.getMonth() - now.getMonth());
-    if (months <= 0) return sum;
-    return sum + Math.max(0, g.targetAmount - g.currentAmount) / months;
-  }, 0);
+  const savingsBase = totalPlannedMonthlySavings(data.emergencyFund, data.savingsGoals);
 
   let cumulative = 0;
   const result: CashflowMonth[] = [];

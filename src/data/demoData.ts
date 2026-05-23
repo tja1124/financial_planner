@@ -55,6 +55,7 @@ export const demoData: AppData = {
     name: 'Emergency Fund',
     targetAmount: 15000,
     currentAmount: 4200,
+    monthlyContribution: 300,
   },
   savingsGoals: [
     {
@@ -63,6 +64,7 @@ export const demoData: AppData = {
       targetAmount: 3000,
       currentAmount: 800,
       targetDate: twelveMonths.toISOString().split('T')[0],
+      monthlyContribution: 200,
     },
     {
       id: 'save3',
@@ -70,6 +72,7 @@ export const demoData: AppData = {
       targetAmount: 1500,
       currentAmount: 350,
       targetDate: sixMonths.toISOString().split('T')[0],
+      monthlyContribution: 200,
     },
   ],
 };
