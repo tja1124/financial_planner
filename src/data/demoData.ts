@@ -50,14 +50,13 @@ export const demoData: AppData = {
       extraPayment: 0,
     },
   ],
+  emergencyFund: {
+    id: 'emergency-fund',
+    name: 'Emergency Fund',
+    targetAmount: 15000,
+    currentAmount: 4200,
+  },
   savingsGoals: [
-    {
-      id: 'save1',
-      name: 'Emergency Fund',
-      targetAmount: 15000,
-      currentAmount: 4200,
-      targetDate: eighteenMonths.toISOString().split('T')[0],
-    },
     {
       id: 'save2',
       name: 'Vacation',

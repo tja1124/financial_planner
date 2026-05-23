@@ -1,7 +1,11 @@
 import type { AppData, Recommendation, FinancialSummary } from '../types';
 import { formatCurrency } from './calculations';
 import { simulateDebtStrategy } from './debtStrategies';
-import { computeEmergencyFundTarget } from './scenarios';
+import {
+  computeEmergencyRunwayMonths,
+  monthlyCoreExpenses,
+  protectedExpenseDays,
+} from './emergencyFund';
 
 const PRIORITY_ORDER: Record<Recommendation['priority'], number> = {
   critical: 0,
@@ -23,10 +27,8 @@ export function getRecommendations(
   const expenses = summary.totalMonthlyExpenses;
   const dti = income > 0 ? summary.totalMonthlyDebtPayments / income : 0;
 
-  const efGoal = data.savingsGoals.find((g) => /emergency/i.test(g.name));
-  const efTarget = efGoal?.targetAmount ?? computeEmergencyFundTarget(data.expenses);
-  const efCurrent = efGoal?.currentAmount ?? 0;
-  const efMonths = expenses > 0 ? efCurrent / expenses : 0;
+  const coreExpenses = monthlyCoreExpenses(data.expenses);
+  const efMonths = computeEmergencyRunwayMonths(data.emergencyFund, data.expenses) ?? 0;
 
   const snowball = simulateDebtStrategy(data.debts, 'snowball');
   const avalanche = simulateDebtStrategy(data.debts, 'avalanche');
@@ -90,23 +92,34 @@ export function getRecommendations(
     });
   }
 
-  if (expenses > 0 && efMonths < 1 && efTarget > 0) {
+  if (coreExpenses > 0 && efMonths < 1) {
     recs.push({
       id: 'emergency-critical',
       priority: 'critical',
-      title: 'Emergency fund runway is thin',
-      description: `Your emergency fund covers less than 1 month of expenses. Work toward a 3-month buffer — it's the most important financial safety net.`,
+      title: 'Emergency fund covers less than 1 month of essentials',
+      description:
+        'Aim for at least 3 months of core expenses in your dedicated emergency reserve.',
       actionPage: 'savings',
       tone: 'caution',
     });
-  } else if (expenses > 0 && efMonths < 3 && efTarget > 0) {
+  } else if (coreExpenses > 0 && efMonths < 3) {
+    const days = protectedExpenseDays(efMonths);
     recs.push({
       id: 'emergency-fund',
       priority: 'warning',
-      title: 'Build your emergency fund',
-      description: `Your emergency fund currently covers about ${efMonths.toFixed(1)} months of expenses. Aim for 3–6 months for a solid safety net.`,
+      title: `Emergency fund covers ${efMonths.toFixed(1)} months of essentials`,
+      description: `Aim for at least 3 months of core expenses. Your reserve currently protects about ${days} days of expenses.`,
       actionPage: 'savings',
       tone: 'caution',
+    });
+  } else if (coreExpenses > 0 && efMonths >= 6) {
+    recs.push({
+      id: 'emergency-strong',
+      priority: 'healthy',
+      title: `Emergency fund covers ${efMonths.toFixed(1)} months of essentials`,
+      description: 'Your reserve is in strong shape for unexpected income or expense shocks.',
+      actionPage: 'savings',
+      tone: 'positive',
     });
   }
 

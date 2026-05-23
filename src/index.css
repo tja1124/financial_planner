@@ -246,6 +246,36 @@
     border: 1px solid var(--border-subtle);
   }
 
+  .emergency-fund-card {
+    background: var(--surface-elevated);
+    border: 1px solid color-mix(in srgb, #10b981 22%, var(--border-default));
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+  }
+
+  .dark .emergency-fund-card {
+    border-color: color-mix(in srgb, #34d399 18%, var(--border-default));
+  }
+
+  .emergency-fund-card__edge {
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      rgba(16, 185, 129, 0.45),
+      rgba(45, 212, 191, 0.25),
+      transparent
+    );
+  }
+
+  .dark .emergency-fund-card__edge {
+    background: linear-gradient(
+      90deg,
+      rgba(52, 211, 153, 0.35),
+      rgba(45, 212, 191, 0.15),
+      transparent
+    );
+  }
+
   .momentum-scroll {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;

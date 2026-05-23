@@ -134,7 +134,7 @@ function AppMain({
     if (
       hasData &&
       !window.confirm(
-        'Load demo data? This replaces your current income, expenses, debts, and savings goals.',
+        'Load demo data? This replaces your current income, expenses, debts, emergency fund, and savings goals.',
       )
     ) {
       return;
@@ -221,7 +221,10 @@ function AppMain({
         )}
         {page === 'savings' && (
           <SavingsGoalsPage
+            emergencyFund={data.emergencyFund}
+            expenses={data.expenses}
             savingsGoals={data.savingsGoals}
+            onEmergencyFundChange={setDataField('emergencyFund')}
             onChange={setDataField('savingsGoals')}
           />
         )}

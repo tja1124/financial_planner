@@ -1,6 +1,6 @@
 import type { AppData, FinancialSummary, HealthScoreResult } from '../types';
 import { simulateDebtStrategy } from './debtStrategies';
-import { computeEmergencyFundTarget } from './scenarios';
+import { computeEmergencyRunwayMonths } from './emergencyFund';
 
 function clamp(n: number, min = 0, max = 100): number {
   return Math.min(max, Math.max(min, n));
@@ -18,12 +18,12 @@ function scoreSavingsRate(income: number, savings: number): number {
 }
 
 function scoreEmergencyRunway(
-  expenses: number,
+  coreExpenses: number,
   efCurrent: number,
   efTarget: number,
 ): number {
-  if (expenses <= 0) return efCurrent > 0 ? 70 : 50;
-  const months = efCurrent / expenses;
+  if (coreExpenses <= 0) return efCurrent > 0 ? 70 : 50;
+  const months = efCurrent / coreExpenses;
   if (months >= 6) return 100;
   if (months >= 3) return 85;
   if (months >= 1) return 60;
@@ -102,9 +102,13 @@ export function computeHealthScore(
   summary: FinancialSummary,
 ): HealthScoreResult {
   const income = summary.totalMonthlyIncome;
-  const efGoal = data.savingsGoals.find((g) => /emergency/i.test(g.name));
-  const efTarget = efGoal?.targetAmount ?? computeEmergencyFundTarget(data.expenses);
-  const efCurrent = efGoal?.currentAmount ?? 0;
+  const efTarget = data.emergencyFund.targetAmount;
+  const efCurrent = data.emergencyFund.currentAmount;
+  const runwayMonths = computeEmergencyRunwayMonths(data.emergencyFund, data.expenses);
+  const coreExpenses =
+    runwayMonths != null && runwayMonths > 0
+      ? efCurrent / runwayMonths
+      : 0;
   const totalDebt = data.debts.reduce((s, d) => s + d.balance, 0);
   const payoffMonths = simulateDebtStrategy(data.debts, 'custom').payoffMonths;
 
@@ -119,9 +123,9 @@ export function computeHealthScore(
     {
       id: 'emergency',
       label: 'Emergency runway',
-      score: scoreEmergencyRunway(summary.totalMonthlyExpenses, efCurrent, efTarget),
+      score: scoreEmergencyRunway(coreExpenses, efCurrent, efTarget),
       weight: 0.2,
-      description: 'Months of expenses covered by emergency savings.',
+      description: 'Months of core expenses covered by your emergency fund.',
     },
     {
       id: 'dti',

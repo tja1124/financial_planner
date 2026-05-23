@@ -52,10 +52,20 @@ export interface SavingsGoal {
   targetDate: string;
 }
 
+/** Built-in emergency reserve — always present, not deletable. */
+export interface EmergencyFund {
+  id: 'emergency-fund';
+  name: string;
+  currentAmount: number;
+  targetAmount: number;
+}
+
 export interface AppData {
   income: IncomeSource[];
   expenses: Expense[];
   debts: Debt[];
+  emergencyFund: EmergencyFund;
+  /** Optional dated goals (vacation, wedding, etc.) — excludes emergency fund. */
   savingsGoals: SavingsGoal[];
 }
 

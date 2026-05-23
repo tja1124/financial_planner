@@ -1,6 +1,7 @@
 import { lazy, Suspense, useMemo } from 'react';
 import type { AppData, FinancialSummary, Page } from '../types';
 import { formatCurrency } from '../utils/calculations';
+import { computeEmergencyRunwayMonths } from '../utils/emergencyFund';
 import { projectCashflow } from '../utils/cashflow';
 import { getRecommendations } from '../utils/recommendations';
 import { computeHealthScore } from '../utils/healthScore';
@@ -58,14 +59,10 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
     [data.debts],
   );
 
-  // Emergency runway in months
-  const efRunwayMonths = useMemo(() => {
-    const efGoal = data.savingsGoals.find((g) => /emergency/i.test(g.name));
-    const efCurrent = efGoal?.currentAmount ?? 0;
-    if (totalMonthlyExpenses <= 0) return null;
-    const months = efCurrent / totalMonthlyExpenses;
-    return months > 0 ? months : null;
-  }, [data.savingsGoals, totalMonthlyExpenses]);
+  const efRunwayMonths = useMemo(
+    () => computeEmergencyRunwayMonths(data.emergencyFund, data.expenses),
+    [data.emergencyFund, data.expenses],
+  );
 
   if (isEmpty) {
     return (

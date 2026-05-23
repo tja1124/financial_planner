@@ -1,15 +1,17 @@
 import type { AppData } from '../types';
+import { createEmptyEmergencyFund, normalizeAppData } from './emergencyFund';
 
 export const STORAGE_KEY = 'finance_planner_data';
 export const ONBOARDING_KEY = 'finance_planner_onboarding_complete';
 export const LAST_SAVED_KEY = 'finance_planner_last_saved';
 
-export const DATA_VERSION = 1;
+export const DATA_VERSION = 2;
 
 export const defaultData: AppData = {
   income: [],
   expenses: [],
   debts: [],
+  emergencyFund: createEmptyEmergencyFund([]),
   savingsGoals: [],
 };
 
@@ -17,8 +19,9 @@ export function loadData(): AppData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultData;
-    const parsed = JSON.parse(raw) as AppData;
-    return validateAppData(parsed) ? parsed : defaultData;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!validateAppData(parsed)) return defaultData;
+    return normalizeAppData(parsed as AppData);
   } catch {
     return defaultData;
   }
@@ -72,19 +75,22 @@ export function hasAnyData(data: AppData): boolean {
     data.income.length > 0 ||
     data.expenses.length > 0 ||
     data.debts.length > 0 ||
-    data.savingsGoals.length > 0
+    data.savingsGoals.length > 0 ||
+    data.emergencyFund.currentAmount > 0
   );
 }
 
 export function validateAppData(value: unknown): value is AppData {
   if (!value || typeof value !== 'object') return false;
   const d = value as Record<string, unknown>;
-  return (
+  const hasLegacyShape =
     Array.isArray(d.income) &&
     Array.isArray(d.expenses) &&
     Array.isArray(d.debts) &&
-    Array.isArray(d.savingsGoals)
-  );
+    Array.isArray(d.savingsGoals);
+  const hasEmergencyFund =
+    d.emergencyFund != null && typeof d.emergencyFund === 'object';
+  return hasLegacyShape && (hasEmergencyFund || Array.isArray(d.savingsGoals));
 }
 
 export interface ExportPayload {
@@ -126,14 +132,14 @@ export function downloadJsonExport(
 export function parseImportFile(text: string): AppData | null {
   try {
     const parsed = JSON.parse(text) as unknown;
-    if (validateAppData(parsed)) return parsed;
+    if (validateAppData(parsed)) return normalizeAppData(parsed as AppData);
     if (
       parsed &&
       typeof parsed === 'object' &&
       'data' in parsed &&
       validateAppData((parsed as ExportPayload).data)
     ) {
-      return (parsed as ExportPayload).data;
+      return normalizeAppData((parsed as ExportPayload).data);
     }
     return null;
   } catch {
