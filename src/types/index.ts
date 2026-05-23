@@ -8,9 +8,19 @@ export interface IncomeSource {
 export interface Expense {
   id: string;
   name: string;
+  /** For recurring expenses: the monthly amount.
+   *  For planned expenses: the computed monthly-required (auto-set on save). */
   amount: number;
   category: ExpenseCategory;
   isFixed: boolean;
+  /** true = sinking-fund / one-time planned expense */
+  isPlannedExpense?: boolean;
+  /** Total cost of the planned expense */
+  targetAmount?: number;
+  /** Amount already saved or paid toward the planned expense */
+  currentSavedOrPaid?: number;
+  /** Date the planned expense must be paid */
+  targetDate?: string;
 }
 
 export type ExpenseCategory =

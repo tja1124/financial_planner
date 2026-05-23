@@ -146,7 +146,7 @@ export function ScenariosPage({ data }: Props) {
           />
           <div className="space-y-0">
             <MetricRow label="Monthly leftover" value={activeMetrics.monthlyLeftover} highlight />
-            <MetricRow label="Safe weekly spending" value={activeMetrics.safeWeeklySpending} />
+            <MetricRow label="Weekly flex" value={activeMetrics.safeWeeklySpending} />
             <MetricRow
               label="Debt payoff timeline"
               value={formatPayoffDuration(activeMetrics.debtPayoffMonths)}
@@ -179,7 +179,7 @@ export function ScenariosPage({ data }: Props) {
               return (
                 <div key={s.preset}>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className={selected === s.preset ? 'font-semibold text-indigo-700' : 'text-slate-600'}>
+                    <span className={selected === s.preset ? 'font-semibold text-indigo-700 dark:text-indigo-400' : 'text-secondary'}>
                       {s.label}
                     </span>
                     <span
@@ -228,7 +228,7 @@ export function ScenariosPage({ data }: Props) {
                 values={allScenarios.map((s) => formatCurrency(s.monthlyLeftover))}
               />
               <CompareRow
-                label="Weekly spending"
+                label="Weekly flex"
                 values={allScenarios.map((s) => formatCurrency(s.safeWeeklySpending))}
               />
               <CompareRow
@@ -258,9 +258,9 @@ export function ScenariosPage({ data }: Props) {
 function CompareRow({ label, values }: { label: string; values: string[] }) {
   return (
     <tr>
-      <td className="py-3 px-2 text-slate-600 dark:text-slate-400">{label}</td>
+      <td className="py-3 px-2 text-muted">{label}</td>
       {values.map((v, i) => (
-        <td key={i} className="py-3 px-2 text-right font-medium text-slate-800 dark:text-slate-100 tabular-nums">
+        <td key={i} className="py-3 px-2 text-right font-medium text-primary tabular-nums">
           {v}
         </td>
       ))}

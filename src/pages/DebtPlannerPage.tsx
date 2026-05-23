@@ -184,6 +184,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             label="Current balance"
             type="number"
             min={0}
+            step={50}
             placeholder="0"
             prefix="$"
             value={form.balance || ''}
@@ -204,6 +205,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             label="Minimum payment"
             type="number"
             min={0}
+            step={25}
             placeholder="0"
             prefix="$"
             value={form.minimumPayment || ''}
@@ -213,13 +215,14 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             label="Extra payment (custom)"
             type="number"
             min={0}
+            step={25}
             placeholder="0"
             prefix="$"
             value={form.extraPayment || ''}
             onChange={(e) => setForm({ ...form, extraPayment: parseNonNegativeInput(e.target.value) })}
           />
         </div>
-        <p className="text-xs text-slate-500 mt-3">
+        <p className="text-xs text-muted mt-3">
           Extra payments apply to the Custom strategy. Snowball and avalanche pool all extras automatically.
         </p>
         <div className="flex flex-col sm:flex-row gap-2 mt-5">
@@ -309,7 +312,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <p className="font-semibold text-sm text-slate-800 dark:text-slate-100">
+                      <p className="font-semibold text-sm text-primary">
                         {STRATEGY_LABELS[result.strategy]}
                       </p>
                       {isBest && (

@@ -101,6 +101,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
             label="Target amount"
             type="number"
             min={0}
+            step={100}
             placeholder="0"
             prefix="$"
             value={form.targetAmount || ''}
@@ -110,6 +111,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
             label="Already saved"
             type="number"
             min={0}
+            step={50}
             placeholder="0"
             prefix="$"
             value={form.currentAmount || ''}
@@ -153,7 +155,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
               <Card key={goal.id}>
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="font-semibold text-slate-800 dark:text-slate-100">{goal.name}</h3>
+                    <h3 className="font-semibold text-primary">{goal.name}</h3>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Target: {new Date(goal.targetDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                       {isPast && <span className="text-red-400 ml-1">(overdue)</span>}
@@ -171,8 +173,8 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
 
                 <div className="mb-3">
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-slate-600 font-medium">{formatCurrency(goal.currentAmount)}</span>
-                    <span className="text-slate-400">{formatCurrency(goal.targetAmount)}</span>
+                    <span className="font-medium text-primary">{formatCurrency(goal.currentAmount)}</span>
+                    <span className="text-secondary">{formatCurrency(goal.targetAmount)}</span>
                   </div>
                   <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                     <div
@@ -186,7 +188,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
                 </div>
 
                 {!isComplete && (
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between pt-3 border-t divider">
                     <div>
                       <p className="text-xs text-slate-500">Monthly needed</p>
                       <p className={`text-sm font-semibold ${isPast ? 'text-red-500' : 'text-indigo-600'}`}>
@@ -198,7 +200,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
                 )}
 
                 {isComplete && (
-                  <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-2 pt-3 border-t divider">
                     <span className="text-emerald-500 text-lg">✓</span>
                     <p className="text-sm font-medium text-emerald-600">Goal reached!</p>
                   </div>

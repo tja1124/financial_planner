@@ -46,6 +46,18 @@ export function monthsUntil(dateStr: string): number {
   );
 }
 
+/** Compute the monthly amount needed for a planned expense. */
+export function computePlannedMonthlyRequired(
+  targetAmount: number,
+  currentSavedOrPaid: number,
+  targetDate: string,
+): number {
+  const remaining = Math.max(0, targetAmount - currentSavedOrPaid);
+  const months = monthsUntil(targetDate);
+  if (remaining <= 0) return 0;
+  return months > 0 ? remaining / months : remaining;
+}
+
 export function computeSummary(
   income: IncomeSource[],
   expenses: Expense[],

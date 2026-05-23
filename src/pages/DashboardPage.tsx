@@ -8,9 +8,9 @@ import { formatPayoffDuration } from '../utils/debtStrategies';
 import { simulateDebtStrategy } from '../utils/debtStrategies';
 import { StatCard } from '../components/StatCard';
 import { CardHeader } from '../components/Card';
-import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { RecommendationCard } from '../components/RecommendationCard';
+import { DashboardHero } from '../components/DashboardHero';
 import { HealthScoreCard } from '../components/HealthScoreCard';
 import { AnimatedCard } from '../components/motion/AnimatedCard';
 import { FadeIn } from '../components/motion/FadeIn';
@@ -58,13 +58,18 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
     [data.debts],
   );
 
+  // Emergency runway in months
+  const efRunwayMonths = useMemo(() => {
+    const efGoal = data.savingsGoals.find((g) => /emergency/i.test(g.name));
+    const efCurrent = efGoal?.currentAmount ?? 0;
+    if (totalMonthlyExpenses <= 0) return null;
+    const months = efCurrent / totalMonthlyExpenses;
+    return months > 0 ? months : null;
+  }, [data.savingsGoals, totalMonthlyExpenses]);
+
   if (isEmpty) {
     return (
       <PageTransition>
-        <PageHeader
-          title="Dashboard"
-          subtitle="Your complete financial picture — budget, forecast, and next steps."
-        />
         <AnimatedCard>
           <EmptyState
             icon="📊"
@@ -92,34 +97,20 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
       ? Math.round((totalMonthlySavingsContributions / totalMonthlyIncome) * 100)
       : 0;
 
+  const isOnTrack = monthlyLeftover >= 0;
+
   return (
     <PageTransition>
       <div className="page-stack-tight">
         <FadeIn>
-          <section className="dashboard-hero surface-card p-5 sm:p-7">
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-2">
-                  Overview
-                </p>
-                <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight">
-                  {monthlyLeftover >= 0 ? 'On track' : 'Needs attention'}
-                </h1>
-                <p className="text-sm text-secondary mt-2 max-w-md leading-relaxed">
-                  {monthlyLeftover >= 0
-                    ? `${formatCurrency(monthlyLeftover)} left each month after obligations.`
-                    : `${formatCurrency(Math.abs(monthlyLeftover))} over budget — review expenses and debt.`}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2 sm:gap-3">
-                <HeroPill label="Weekly safe" value={formatCurrency(safeWeeklySpending)} />
-                <HeroPill label="Savings rate" value={`${savingsRate}%`} />
-                {debtFreeMonths > 0 && (
-                  <HeroPill label="Debt-free" value={formatPayoffDuration(debtFreeMonths)} />
-                )}
-              </div>
-            </div>
-          </section>
+          <DashboardHero
+            isOnTrack={isOnTrack}
+            monthlyLeftover={monthlyLeftover}
+            safeWeeklySpending={safeWeeklySpending}
+            savingsRate={savingsRate}
+            debtFreeMonths={debtFreeMonths}
+            efRunwayMonths={efRunwayMonths}
+          />
         </FadeIn>
 
         <HealthScoreCard health={health} />
@@ -147,7 +138,7 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
                 featured
               />
               <StatCard
-                label="Safe weekly"
+                label="Weekly flex"
                 value={formatCurrency(safeWeeklySpending)}
                 subtext="Discretionary"
                 color="green"
@@ -212,14 +203,5 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
         )}
       </div>
     </PageTransition>
-  );
-}
-
-function HeroPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="surface-muted px-3.5 py-2.5 rounded-xl min-w-[7rem]">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="text-sm font-bold text-primary tabular-nums mt-0.5">{value}</p>
-    </div>
   );
 }

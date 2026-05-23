@@ -95,7 +95,7 @@ export function getRecommendations(
       id: 'emergency-critical',
       priority: 'critical',
       title: 'Emergency fund runway is thin',
-      description: `Less than one month of expenses saved. Target ${formatCurrency(efTarget)} (about 3 months).`,
+      description: `Your emergency fund covers less than 1 month of expenses. Work toward a 3-month buffer — it's the most important financial safety net.`,
       actionPage: 'savings',
       tone: 'caution',
     });
@@ -104,7 +104,7 @@ export function getRecommendations(
       id: 'emergency-fund',
       priority: 'warning',
       title: 'Build your emergency fund',
-      description: `About ${efMonths.toFixed(1)} months of expenses saved. Aim for ${formatCurrency(efTarget)}.`,
+      description: `Your emergency fund currently covers about ${efMonths.toFixed(1)} months of expenses. Aim for 3–6 months for a solid safety net.`,
       actionPage: 'savings',
       tone: 'caution',
     });
@@ -120,8 +120,8 @@ export function getRecommendations(
       recs.push({
         id: 'overspend-category',
         priority: 'warning',
-        title: `${top[0]} may be overspending`,
-        description: `${top[0]} is ${formatCurrency(top[1])}/mo (${((top[1] / income) * 100).toFixed(0)}% of income). Review for cuts or rebalancing.`,
+        title: `${top[0]} spending is elevated`,
+        description: `${top[0]} costs ${formatCurrency(top[1])}/month — ${((top[1] / income) * 100).toFixed(0)}% of take-home income. Review for cuts or rebalancing.`,
         actionPage: 'expenses',
         tone: 'caution',
       });
@@ -169,8 +169,8 @@ export function getRecommendations(
     recs.push({
       id: 'healthy-buffer',
       priority: 'healthy',
-      title: 'Healthy monthly buffer',
-      description: `${formatCurrency(summary.monthlyLeftover)} leftover each month gives flexibility for goals or extra debt payoff.`,
+      title: 'Healthy cashflow buffer',
+      description: `${formatCurrency(summary.monthlyLeftover)}/month discretionary after all commitments — well-positioned for goals or accelerated debt payoff.`,
       tone: 'positive',
     });
   }
@@ -190,8 +190,8 @@ export function getRecommendations(
     recs.push({
       id: 'weekly-budget',
       priority: 'opportunity',
-      title: `Safe to spend ${formatCurrency(summary.safeWeeklySpending)}/week`,
-      description: 'Discretionary cash after bills, debt, and savings — use guilt-free.',
+      title: `${formatCurrency(summary.safeWeeklySpending)}/week in flexible spending`,
+      description: 'This is your discretionary budget after bills, debt, and savings — spend it without guilt.',
       tone: 'positive',
     });
   }
@@ -200,8 +200,8 @@ export function getRecommendations(
     recs.push({
       id: 'extra-debt',
       priority: 'opportunity',
-      title: 'Room to accelerate debt',
-      description: 'Even $50/mo extra cuts interest and shortens payoff time.',
+      title: 'Room to accelerate debt payoff',
+      description: `Even an extra ${formatCurrency(50)}/month on your highest-rate debt reduces total interest and shortens the timeline.`,
       actionPage: 'debt',
       tone: 'neutral',
     });
@@ -224,8 +224,8 @@ export function getRecommendations(
       recs.push({
         id: 'improve-trend',
         priority: 'opportunity',
-        title: 'Trending positive — capture more savings',
-        description: 'You have monthly surplus but low planned savings. Redirect a portion toward goals.',
+        title: 'Surplus going unallocated',
+        description: 'You have a monthly surplus but low planned savings. Routing even a small amount toward a goal compounds over time.',
         actionPage: 'savings',
         tone: 'neutral',
       });

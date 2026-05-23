@@ -102,7 +102,7 @@ export function IncomePage({ income, onChange }: Props) {
             label="Amount"
             type="number"
             min={0}
-            step="0.01"
+            step={50}
             placeholder="0"
             prefix="$"
             value={form.amount || ''}
@@ -146,8 +146,8 @@ export function IncomePage({ income, onChange }: Props) {
                 className="flex flex-col sm:flex-row sm:items-center justify-between py-4 gap-3"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-800 dark:text-slate-100 truncate">{source.name}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 capitalize mt-0.5">
+                  <p className="font-medium text-primary truncate">{source.name}</p>
+                  <p className="text-xs text-muted capitalize mt-0.5">
                     {formatCurrency(source.amount)} {source.frequency} ·{' '}
                     {formatCurrency(toMonthly(source.amount, source.frequency))}/mo
                   </p>
