@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   compactMode: false,
   reducedMotion: false,
   exportIncludeTimestamp: true,
+  acknowledgedInsightIds: [],
 };
 
 export const CURRENCY_OPTIONS: { code: CurrencyCode; label: string }[] = [
@@ -23,7 +24,13 @@ export function loadSettings(): AppSettings {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (!raw) return { ...DEFAULT_SETTINGS };
     const parsed = JSON.parse(raw) as Partial<AppSettings>;
-    return { ...DEFAULT_SETTINGS, ...parsed };
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      acknowledgedInsightIds: Array.isArray(parsed.acknowledgedInsightIds)
+        ? parsed.acknowledgedInsightIds.filter((id): id is string => typeof id === 'string')
+        : [],
+    };
   } catch {
     return { ...DEFAULT_SETTINGS };
   }

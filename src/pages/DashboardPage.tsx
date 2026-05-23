@@ -1,5 +1,6 @@
-import { lazy, Suspense, useMemo } from 'react';
+import { lazy, Suspense, useCallback, useMemo } from 'react';
 import type { AppData, FinancialSummary, Page } from '../types';
+import { useSettings } from '../context/SettingsContext';
 import { formatCurrency } from '../utils/calculations';
 import { computeEmergencyRunwayMonths } from '../utils/emergencyFund';
 import { projectCashflow } from '../utils/cashflow';
@@ -39,6 +40,7 @@ function ChartSkeleton() {
 }
 
 export function DashboardPage({ data, summary, onNavigate }: Props) {
+  const { settings, updateSettings } = useSettings();
   const {
     totalMonthlyIncome,
     totalMonthlyExpenses,
@@ -101,6 +103,24 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
 
   const isOnTrack = monthlyLeftover >= 0;
 
+  const handleAcknowledge = useCallback(
+    (id: string) => {
+      if (settings.acknowledgedInsightIds.includes(id)) return;
+      updateSettings({
+        acknowledgedInsightIds: [...settings.acknowledgedInsightIds, id],
+      });
+    },
+    [settings.acknowledgedInsightIds, updateSettings],
+  );
+
+  const handleRestoreInsights = useCallback(() => {
+    updateSettings({ acknowledgedInsightIds: [] });
+  }, [updateSettings]);
+
+  const visibleInsightCount = recommendations.filter(
+    (r) => !settings.acknowledgedInsightIds.includes(r.id),
+  ).length;
+
   return (
     <PageTransition>
       <div className="page-stack-tight">
@@ -119,8 +139,21 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
 
         {recommendations.length > 0 && (
           <AnimatedCard delay={0.04} hoverLift>
-            <CardHeader title="Insights" subtitle="Prioritized for your plan" />
-            <RecommendationCard recommendations={recommendations} onNavigate={onNavigate} />
+            <CardHeader
+              title="Insights"
+              subtitle={
+                visibleInsightCount > 0
+                  ? `${visibleInsightCount} prioritized for your plan`
+                  : 'All acknowledged — restore to review'
+              }
+            />
+            <RecommendationCard
+              recommendations={recommendations}
+              acknowledgedIds={settings.acknowledgedInsightIds}
+              onAcknowledge={handleAcknowledge}
+              onRestoreAll={handleRestoreInsights}
+              onNavigate={onNavigate}
+            />
           </AnimatedCard>
         )}
 

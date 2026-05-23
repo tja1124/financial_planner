@@ -147,6 +147,8 @@ export interface AppSettings {
   compactMode: boolean;
   reducedMotion: boolean;
   exportIncludeTimestamp: boolean;
+  /** Stable recommendation IDs hidden from the dashboard insights list */
+  acknowledgedInsightIds: string[];
 }
 
 export interface HealthScoreFactor {

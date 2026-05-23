@@ -113,7 +113,7 @@ export function Layout({
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-9 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] lg:pb-10">
         <AnimatePresence mode="wait">
           <motion.div key={currentPage} {...motionProps.page}>
             {children}

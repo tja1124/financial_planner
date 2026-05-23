@@ -19,6 +19,7 @@ import { Input, Select } from '../components/Input';
 import { PageHeader } from '../components/PageHeader';
 import { FormAlerts } from '../components/FormAlerts';
 import { EmptyState } from '../components/EmptyState';
+import { CollapsibleSection } from '../components/CollapsibleSection';
 import { useAppActions } from '../context/AppActionsContext';
 import { AppIcon, EXPENSE_CATEGORY_ICONS, EMPTY_STATE_ICONS, IconTile } from '../components/icons';
 import { Calendar, CheckCircle2, X } from 'lucide-react';
@@ -556,84 +557,93 @@ function PlannedExpenseRow({
   const isComplete = remaining <= 0;
   const isOverdue = !isComplete && months <= 0;
 
-  return (
-    <div className="py-4 space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <IconTile icon={EXPENSE_CATEGORY_ICONS[expense.category]} variant="muted" size="sm" className="mt-0.5" />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-medium text-primary truncate">{expense.name}</p>
-              <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300">
-                Planned
-              </span>
-              {isOverdue && (
-                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400">
-                  Overdue
-                </span>
-              )}
-              {isComplete && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                  <AppIcon icon={CheckCircle2} size="xs" />
-                  Covered
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-muted mt-0.5">
-              {expense.category}
-              {expense.targetDate && (
-                <>
-                  {' · '}Due{' '}
-                  {new Date(expense.targetDate + 'T00:00:00').toLocaleDateString('en-US', {
-                    month: 'short',
-                    year: 'numeric',
-                  })}
-                  {months > 0 && ` · ${months}mo away`}
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2 shrink-0">
-          <Button size="sm" variant="ghost" onClick={onEdit}>Edit</Button>
-          <Button size="sm" variant="danger" onClick={onDelete}>Remove</Button>
-        </div>
-      </div>
+  const dueLabel = expense.targetDate
+    ? new Date(expense.targetDate + 'T00:00:00').toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
+      })
+    : '';
 
-      {/* Progress bar */}
-      <div className="pl-10">
-        <div className="flex justify-between text-xs mb-1.5">
-          <span className="text-muted">
-            {formatCurrency(saved)} saved of {formatCurrency(target)}
-          </span>
-          <span className={`font-medium tabular-nums ${isComplete ? 'text-emerald-600 dark:text-emerald-400' : isOverdue ? 'text-red-500' : 'text-secondary'}`}>
-            {pct.toFixed(0)}%
-          </span>
-        </div>
-        <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              isComplete ? 'bg-emerald-500' : isOverdue ? 'bg-red-400' : 'bg-violet-500'
-            }`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          {isComplete ? (
-            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+  return (
+    <div className="py-4">
+      <div className="flex items-start gap-3">
+        <IconTile
+          icon={EXPENSE_CATEGORY_ICONS[expense.category]}
+          variant="muted"
+          size="sm"
+          className="mt-0.5 shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-medium text-primary truncate">{expense.name}</p>
+                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300">
+                  Planned
+                </span>
+                {isOverdue && (
+                  <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400">
+                    Overdue
+                  </span>
+                )}
+                {isComplete && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                    <AppIcon icon={CheckCircle2} size="xs" />
+                    Covered
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted mt-0.5">
+                {formatCurrency(saved)} of {formatCurrency(target)} · {pct.toFixed(0)}%
+                {dueLabel && ` · Due ${dueLabel}`}
+              </p>
+            </div>
+            <div className="flex gap-1.5 shrink-0">
+              <Button size="sm" variant="ghost" onClick={onEdit}>
+                Edit
+              </Button>
+              <Button size="sm" variant="danger" onClick={onDelete}>
+                Remove
+              </Button>
+            </div>
+          </div>
+
+          <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden mt-2.5">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                isComplete ? 'bg-emerald-500' : isOverdue ? 'bg-red-400' : 'bg-violet-500'
+              }`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+
+          {!isComplete && (
+            <CollapsibleSection
+              title="Progress & payments"
+              summary={`${formatCurrency(expense.amount)}/mo needed${isOverdue ? ' · overdue' : ''}`}
+              defaultExpanded={false}
+              collapseOnMobile
+              bordered
+            >
+              <div className="space-y-3">
+                <p className={`text-xs font-medium ${isOverdue ? 'text-red-500' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                  {formatCurrency(expense.amount)}/mo required until covered
+                  {months > 0 && ` · ${months} months remaining`}
+                </p>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-xs text-muted">
+                    {formatCurrency(remaining)} remaining
+                  </p>
+                  <ContributeButton remaining={remaining} onContribute={onContribute} />
+                </div>
+              </div>
+            </CollapsibleSection>
+          )}
+
+          {isComplete && (
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-2">
               Fully covered — no monthly obligation
             </p>
-          ) : (
-            <p className={`text-xs font-medium ${isOverdue ? 'text-red-500' : 'text-indigo-600 dark:text-indigo-400'}`}>
-              {formatCurrency(expense.amount)}/mo needed
-              {isOverdue ? ' (overdue — update date or add payment)' : ''}
-            </p>
-          )}
-          {!isComplete && (
-            <ContributeButton
-              remaining={remaining}
-              onContribute={onContribute}
-            />
           )}
         </div>
       </div>

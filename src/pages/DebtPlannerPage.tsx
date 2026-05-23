@@ -18,6 +18,7 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { PageHeader } from '../components/PageHeader';
 import { EMPTY_STATE_ICONS } from '../components/icons';
+import { CollapsibleSection } from '../components/CollapsibleSection';
 import { EmptyState } from '../components/EmptyState';
 import { FormAlerts } from '../components/FormAlerts';
 import { ChartContainer } from '../components/ChartContainer';
@@ -245,34 +246,71 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
               }
             />
             <div className="list-divider">
-              {debts.map((debt) => (
-                <div key={debt.id} className="py-3 flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedDebtId(debt.id)}
-                      className={`font-medium truncate cursor-pointer ${
-                        selectedDebt?.id === debt.id
-                          ? 'text-indigo-600 dark:text-indigo-400'
-                          : 'text-slate-800 dark:text-slate-100'
-                      }`}
+              {debts.map((debt) => {
+                const monthly = debt.minimumPayment + debt.extraPayment;
+                const isSelected = selectedDebt?.id === debt.id;
+                return (
+                  <div key={debt.id} className="py-3">
+                    <CollapsibleSection
+                      title={debt.name}
+                      summary={`${formatCurrency(debt.balance)} · ${formatCurrency(monthly)}/mo`}
+                      defaultExpanded={isSelected}
+                      collapseOnMobile
+                      bordered={false}
+                      actions={
+                        <>
+                          <Button size="sm" variant="ghost" onClick={() => handleEdit(debt)}>
+                            Edit
+                          </Button>
+                          <Button size="sm" variant="danger" onClick={() => handleDelete(debt.id)}>
+                            Remove
+                          </Button>
+                        </>
+                      }
                     >
-                      {debt.name}
-                    </button>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {formatCurrency(debt.balance)} · {debt.interestRate}% APR ·{' '}
-                      {formatCurrency(debt.minimumPayment + debt.extraPayment)}/mo
-                      {debt.extraPayment > 0 && (
-                        <span className="text-indigo-600"> (+{formatCurrency(debt.extraPayment)} extra)</span>
-                      )}
-                    </p>
+                      <div className="space-y-3 text-sm">
+                        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                          <div>
+                            <dt className="text-muted">Balance</dt>
+                            <dd className="font-medium text-primary tabular-nums mt-0.5">
+                              {formatCurrency(debt.balance)}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-muted">APR</dt>
+                            <dd className="font-medium text-primary tabular-nums mt-0.5">
+                              {debt.interestRate}%
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-muted">Minimum</dt>
+                            <dd className="font-medium text-primary tabular-nums mt-0.5">
+                              {formatCurrency(debt.minimumPayment)}/mo
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-muted">Extra payment</dt>
+                            <dd className="font-medium text-primary tabular-nums mt-0.5">
+                              {formatCurrency(debt.extraPayment)}/mo
+                            </dd>
+                          </div>
+                        </dl>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDebtId(debt.id)}
+                          className={`text-xs font-semibold cursor-pointer accent-ring rounded ${
+                            isSelected
+                              ? 'text-indigo-600 dark:text-indigo-400'
+                              : 'text-indigo-600/80 dark:text-indigo-400/80 hover:underline'
+                          }`}
+                        >
+                          {isSelected ? 'Shown on payoff chart' : 'Highlight on payoff chart'}
+                        </button>
+                      </div>
+                    </CollapsibleSection>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => handleEdit(debt)}>Edit</Button>
-                    <Button size="sm" variant="danger" onClick={() => handleDelete(debt.id)}>Remove</Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
 

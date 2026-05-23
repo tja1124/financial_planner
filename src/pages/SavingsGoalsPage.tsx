@@ -19,6 +19,7 @@ import { FormAlerts } from '../components/FormAlerts';
 import { EmptyState } from '../components/EmptyState';
 import { EmergencyFundCard } from '../components/EmergencyFundCard';
 import { SavingsContributionControls } from '../components/SavingsContributionControls';
+import { CollapsibleSection } from '../components/CollapsibleSection';
 import { useAppActions } from '../context/AppActionsContext';
 import { EMPTY_STATE_ICONS } from '../components/icons';
 import { CheckCircle2 } from 'lucide-react';
@@ -241,21 +242,22 @@ export function SavingsGoalsPage({
             const isComplete = progress >= 100;
             const isPast = months < 0 && !isComplete;
 
+            const targetLabel = new Date(goal.targetDate + 'T00:00:00').toLocaleDateString(
+              'en-US',
+              { month: 'short', year: 'numeric' },
+            );
+
             return (
-              <Card key={goal.id}>
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-primary">{goal.name}</h3>
+              <Card key={goal.id} className="!p-4 sm:!p-5">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-primary truncate">{goal.name}</h3>
                     <p className="text-xs text-muted mt-0.5">
-                      Target:{' '}
-                      {new Date(goal.targetDate + 'T00:00:00').toLocaleDateString('en-US', {
-                        month: 'short',
-                        year: 'numeric',
-                      })}
-                      {isPast && <span className="text-red-400 ml-1">(overdue)</span>}
+                      Target {targetLabel}
+                      {isPast && <span className="text-red-400 ml-1">· overdue</span>}
                     </p>
                   </div>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1.5 shrink-0">
                     <Button size="sm" variant="ghost" onClick={() => handleEdit(goal)}>
                       Edit
                     </Button>
@@ -265,12 +267,15 @@ export function SavingsGoalsPage({
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="font-medium text-primary">{formatCurrency(goal.currentAmount)}</span>
+                <div className="mb-1">
+                  <div className="flex justify-between text-xs mb-1.5 tabular-nums">
+                    <span className="font-medium text-primary">
+                      {formatCurrency(goal.currentAmount)}
+                    </span>
+                    <span className="text-muted">{progress.toFixed(0)}%</span>
                     <span className="text-secondary">{formatCurrency(goal.targetAmount)}</span>
                   </div>
-                  <div className="h-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         isComplete ? 'bg-emerald-500' : isPast ? 'bg-red-400' : 'bg-indigo-500'
@@ -278,30 +283,43 @@ export function SavingsGoalsPage({
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <p className="text-xs text-muted mt-1.5 text-right">{progress.toFixed(0)}% complete</p>
                 </div>
 
-                {!isComplete && (
-                  <SavingsContributionControls
-                    monthlyContribution={goal.monthlyContribution}
-                    onMonthlyChange={(amount) =>
-                      updateGoal(goal.id, { monthlyContribution: amount })
-                    }
-                    onOneTimeDeposit={(amt) => handleDeposit(goal.id, amt)}
-                    targetAmount={goal.targetAmount}
-                    currentAmount={goal.currentAmount}
-                    targetDate={goal.targetDate}
-                    discretionaryIncome={discretionary}
-                  />
-                )}
-
-                {isComplete && (
-                  <div className="flex items-center gap-2 pt-3 border-t divider">
-                    <AppIcon icon={CheckCircle2} size="md" className="text-emerald-500 dark:text-emerald-400" />
+                {isComplete ? (
+                  <div className="flex items-center gap-2 pt-3 mt-3 border-t divider">
+                    <AppIcon
+                      icon={CheckCircle2}
+                      size="md"
+                      className="text-emerald-500 dark:text-emerald-400"
+                    />
                     <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                      Goal reached!
+                      Goal reached
                     </p>
                   </div>
+                ) : (
+                  <CollapsibleSection
+                    title="Contribution plan"
+                    summary={
+                      goal.monthlyContribution > 0
+                        ? `${formatCurrency(goal.monthlyContribution)}/mo planned`
+                        : 'Monthly plan and deposits'
+                    }
+                    defaultExpanded={false}
+                    collapseOnMobile
+                  >
+                    <SavingsContributionControls
+                      embedded
+                      monthlyContribution={goal.monthlyContribution}
+                      onMonthlyChange={(amount) =>
+                        updateGoal(goal.id, { monthlyContribution: amount })
+                      }
+                      onOneTimeDeposit={(amt) => handleDeposit(goal.id, amt)}
+                      targetAmount={goal.targetAmount}
+                      currentAmount={goal.currentAmount}
+                      targetDate={goal.targetDate}
+                      discretionaryIncome={discretionary}
+                    />
+                  </CollapsibleSection>
                 )}
               </Card>
             );

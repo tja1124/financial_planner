@@ -21,6 +21,8 @@ interface Props {
   currentAmount: number;
   targetDate?: string;
   discretionaryIncome?: number;
+  /** When wrapped in CollapsibleSection, omit duplicate heading/border */
+  embedded?: boolean;
 }
 
 const amountInputClass =
@@ -34,6 +36,7 @@ export function SavingsContributionControls({
   currentAmount,
   targetDate,
   discretionaryIncome = 0,
+  embedded = false,
 }: Props) {
   const [depositOpen, setDepositOpen] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
@@ -75,10 +78,12 @@ export function SavingsContributionControls({
   if (isComplete) return null;
 
   return (
-    <section className="mt-5 pt-5 border-t border-[var(--border-subtle)]">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
-        Contributions
-      </h3>
+    <section className={embedded ? '' : 'mt-5 pt-5 border-t border-[var(--border-subtle)]'}>
+      {!embedded && (
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
+          Contributions
+        </h3>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Monthly plan */}

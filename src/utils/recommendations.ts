@@ -131,7 +131,7 @@ export function getRecommendations(
     const top = Object.entries(byCat).sort((a, b) => b[1] - a[1])[0];
     if (top && income > 0 && top[1] / income > 0.35) {
       recs.push({
-        id: 'overspend-category',
+        id: `overspend-category-${top[0].toLowerCase().replace(/\s+/g, '-')}`,
         priority: 'warning',
         title: `${top[0]} spending is elevated`,
         description: `${top[0]} costs ${formatCurrency(top[1])}/month — ${((top[1] / income) * 100).toFixed(0)}% of take-home income. Review for cuts or rebalancing.`,
@@ -144,7 +144,7 @@ export function getRecommendations(
   const highInterestDebt = data.debts.find((d) => d.interestRate >= 15 && d.balance > 0);
   if (highInterestDebt && highInterestDebt.extraPayment < 50) {
     recs.push({
-      id: 'high-interest',
+      id: `high-interest-${highInterestDebt.id}`,
       priority: 'warning',
       title: `Prioritize ${highInterestDebt.name}`,
       description: `At ${highInterestDebt.interestRate}% APR, extra payments here save the most. Try avalanche in Debt Planner.`,

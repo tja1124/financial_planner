@@ -1,7 +1,8 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import type { HealthScoreResult } from '../types';
 import { GRADE_COLORS } from '../utils/healthScore';
 import { FadeIn } from './motion/FadeIn';
+import { CollapsibleSection } from './CollapsibleSection';
 
 const GRADE_LABELS: Record<HealthScoreResult['grade'], string> = {
   excellent: 'Excellent',
@@ -16,7 +17,6 @@ interface Props {
 }
 
 export const HealthScoreCard = memo(function HealthScoreCard({ health }: Props) {
-  const [showBreakdown, setShowBreakdown] = useState(false);
   const colors = GRADE_COLORS[health.grade];
   const circumference = 2 * Math.PI * 52;
   const offset = circumference - (health.overall / 100) * circumference;
@@ -75,19 +75,16 @@ export const HealthScoreCard = memo(function HealthScoreCard({ health }: Props) 
             Based on savings rate, emergency runway, debt-to-income, leftover cashflow, debt load,
             and spending stability. For planning only — not financial advice.
           </p>
-          <button
-            type="button"
-            onClick={() => setShowBreakdown(!showBreakdown)}
-            className="mt-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer accent-ring rounded"
-            aria-expanded={showBreakdown}
-          >
-            {showBreakdown ? 'Hide breakdown' : 'View breakdown'}
-          </button>
         </div>
       </div>
 
-      {showBreakdown && (
-        <div className="mt-5 pt-5 border-t divider grid gap-3 sm:grid-cols-2">
+      <CollapsibleSection
+        title="Score breakdown"
+        summary={`${health.factors.length} factors · tap to expand`}
+        defaultExpanded={false}
+        collapseOnMobile
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
           {health.factors.map((f) => (
             <div key={f.id} className="surface-muted p-3.5" title={f.description}>
               <div className="flex justify-between items-center gap-2 mb-2">
@@ -110,7 +107,7 @@ export const HealthScoreCard = memo(function HealthScoreCard({ health }: Props) 
             </div>
           ))}
         </div>
-      )}
+      </CollapsibleSection>
     </FadeIn>
   );
 });

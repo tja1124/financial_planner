@@ -11,6 +11,7 @@ import { Shield } from 'lucide-react';
 import { Input } from './Input';
 import { IconTile } from './icons/IconTile';
 import { SavingsContributionControls } from './SavingsContributionControls';
+import { CollapsibleSection } from './CollapsibleSection';
 
 interface Props {
   emergencyFund: EmergencyFund;
@@ -143,16 +144,28 @@ export function EmergencyFundCard({
           </button>
         </div>
 
-        <SavingsContributionControls
-          monthlyContribution={emergencyFund.monthlyContribution}
-          onMonthlyChange={(amount) =>
-            onChange({ ...emergencyFund, monthlyContribution: amount })
+        <CollapsibleSection
+          title="Contributions"
+          summary={
+            emergencyFund.monthlyContribution > 0
+              ? `${formatCurrency(emergencyFund.monthlyContribution)}/mo planned`
+              : 'Monthly plan and one-time deposits'
           }
-          onOneTimeDeposit={onContribute}
-          targetAmount={target}
-          currentAmount={emergencyFund.currentAmount}
-          discretionaryIncome={discretionary}
-        />
+          defaultExpanded={false}
+          collapseOnMobile
+        >
+          <SavingsContributionControls
+            embedded
+            monthlyContribution={emergencyFund.monthlyContribution}
+            onMonthlyChange={(amount) =>
+              onChange({ ...emergencyFund, monthlyContribution: amount })
+            }
+            onOneTimeDeposit={onContribute}
+            targetAmount={target}
+            currentAmount={emergencyFund.currentAmount}
+            discretionaryIncome={discretionary}
+          />
+        </CollapsibleSection>
       </div>
     </section>
   );
