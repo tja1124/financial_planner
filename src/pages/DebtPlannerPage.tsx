@@ -40,11 +40,6 @@ interface Props {
 
 const STRATEGIES: DebtStrategy[] = ['snowball', 'avalanche', 'custom'];
 
-const STRATEGY_COLORS: Record<DebtStrategy, string> = {
-  snowball: '#10b981',
-  avalanche: '#6366f1',
-  custom: '#f59e0b',
-};
 
 function emptyDebt(): Omit<Debt, 'id'> {
   return { name: '', balance: 0, interestRate: 0, minimumPayment: 0, extraPayment: 0 };
@@ -144,7 +139,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
     .map((m) => ({ month: m.month, balance: Math.round(m.balance) }));
 
   return (
-    <div className="space-y-8">
+    <div className="page-stack">
       <PageHeader
         title="Debt Planner"
         subtitle="Compare snowball vs avalanche payoff strategies and track individual debts."
@@ -230,7 +225,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                 </span>
               }
             />
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="list-divider">
               {debts.map((debt) => (
                 <div key={debt.id} className="py-3 flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -282,10 +277,10 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                 return (
                   <div
                     key={result.strategy}
-                    className={`rounded-xl p-4 border-2 ${
+                    className={`rounded-xl p-4 sm:p-5 border transition-all ${
                       isBest
-                        ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30'
-                        : 'border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50'
+                        ? 'border-emerald-500/30 bg-emerald-500/[0.06] ring-1 ring-emerald-500/20'
+                        : 'border-[var(--border-subtle)] surface-muted'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -320,17 +315,17 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
               <ChartContainer height={260}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={comparisonChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `Mo ${v}`} />
-                  <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), '']} contentStyle={chart.tooltip.contentStyle} />
-                  <Legend />
-                  {STRATEGIES.map((s) => (
+                  <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `Mo ${v}`} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), '']} contentStyle={chart.tooltip.contentStyle} labelStyle={chart.tooltip.labelStyle} />
+                  <Legend wrapperStyle={chart.legendStyle} />
+                  {STRATEGIES.map((s, i) => (
                     <Line
                       key={s}
                       type="monotone"
                       dataKey={s}
-                      stroke={STRATEGY_COLORS[s]}
+                      stroke={chart.series.lines[i]}
                       strokeWidth={2}
                       dot={false}
                       name={STRATEGY_LABELS[s]}
@@ -355,11 +350,11 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
               <ChartContainer height={200}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={singleChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: chart.tick }} />
-                  <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Balance']} contentStyle={chart.tooltip.contentStyle} />
-                  <Line type="monotone" dataKey="balance" stroke="#6366f1" strokeWidth={2} dot={false} name="Balance" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Balance']} contentStyle={chart.tooltip.contentStyle} labelStyle={chart.tooltip.labelStyle} />
+                  <Line type="monotone" dataKey="balance" stroke={chart.series.lines[0]} strokeWidth={2.5} dot={false} name="Balance" />
                 </LineChart>
               </ResponsiveContainer>
               </ChartContainer>

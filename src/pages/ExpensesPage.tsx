@@ -106,7 +106,7 @@ export function ExpensesPage({ expenses, onChange }: Props) {
   const total = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <div className="space-y-8">
+    <div className="page-stack">
       <PageHeader
         title="Monthly Expenses"
         subtitle="Track recurring bills by category. Fixed vs variable helps with scenario planning."
@@ -198,7 +198,7 @@ export function ExpensesPage({ expenses, onChange }: Props) {
               ))}
             </div>
           )}
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="list-divider">
             {filtered.map((expense) => (
               <div
                 key={expense.id}

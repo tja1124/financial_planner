@@ -19,7 +19,7 @@ export function ThemeToggle() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+        className="flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[var(--surface-secondary)] text-secondary hover:text-primary hover:border-slate-300 dark:hover:border-white/[0.12] transition-all cursor-pointer accent-ring"
         aria-label={`Theme: ${current.label}. Currently ${resolvedTheme} mode.`}
         aria-expanded={open}
         aria-haspopup="listbox"
@@ -37,7 +37,7 @@ export function ThemeToggle() {
           />
           <ul
             role="listbox"
-            className="absolute right-0 top-full mt-2 w-36 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-600 py-1 z-50"
+            className="absolute right-0 top-full mt-2 w-36 surface-overlay rounded-xl py-1 z-50"
           >
             {OPTIONS.map((opt) => (
               <li key={opt.value} role="option" aria-selected={preference === opt.value}>
@@ -47,10 +47,10 @@ export function ThemeToggle() {
                     setPreference(opt.value);
                     setOpen(false);
                   }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer ${
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium cursor-pointer transition-colors ${
                     preference === opt.value
-                      ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300'
-                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                      ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300'
+                      : 'text-secondary hover:bg-slate-50 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   <span>{opt.icon}</span>

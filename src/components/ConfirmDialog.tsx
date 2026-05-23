@@ -32,16 +32,16 @@ export function ConfirmDialog({
     >
       <button
         type="button"
-        className="absolute inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm cursor-pointer"
+        className="absolute inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm cursor-pointer"
         aria-label="Close dialog"
         onClick={onCancel}
       />
-      <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 w-full max-w-md p-6">
-        <h2 id="confirm-dialog-title" className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+      <div className="relative surface-overlay rounded-2xl w-full max-w-md p-6 sm:p-7">
+        <h2 id="confirm-dialog-title" className="text-lg font-semibold text-primary">
           {title}
         </h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">{description}</p>
-        <div className="flex flex-col-reverse sm:flex-row gap-2 mt-6">
+        <p className="text-sm text-secondary mt-2.5 leading-relaxed">{description}</p>
+        <div className="flex flex-col-reverse sm:flex-row gap-2.5 mt-7">
           <Button variant="secondary" className="flex-1" onClick={onCancel}>
             {cancelLabel}
           </Button>

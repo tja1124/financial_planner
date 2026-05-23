@@ -2,6 +2,61 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ─── Design tokens ─── */
+:root {
+  --surface-page: #f8fafc;
+  --surface-elevated: #ffffff;
+  --surface-secondary: #f1f5f9;
+  --surface-chart: #f8fafc;
+  --surface-nav: rgba(255, 255, 255, 0.92);
+  --surface-overlay: #ffffff;
+
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-default: rgba(15, 23, 42, 0.1);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-caption: #94a3b8;
+
+  --accent: #4f46e5;
+  --accent-muted: rgba(79, 70, 229, 0.1);
+  --accent-ring: rgba(79, 70, 229, 0.35);
+
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-elevated: 0 4px 16px rgba(15, 23, 42, 0.06);
+
+  --chart-grid: rgba(15, 23, 42, 0.06);
+  --chart-axis: #64748b;
+}
+
+.dark {
+  --surface-page: #09090b;
+  --surface-elevated: #141419;
+  --surface-secondary: #1c1c22;
+  --surface-chart: #111116;
+  --surface-nav: rgba(20, 20, 25, 0.88);
+  --surface-overlay: #1c1c22;
+
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.08);
+
+  --text-primary: #fafafa;
+  --text-secondary: #d4d4d8;
+  --text-muted: #a1a1aa;
+  --text-caption: #71717a;
+
+  --accent: #a5b4fc;
+  --accent-muted: rgba(129, 140, 248, 0.12);
+  --accent-ring: rgba(129, 140, 248, 0.4);
+
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 4px 24px rgba(0, 0, 0, 0.35);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.45);
+
+  --chart-grid: rgba(255, 255, 255, 0.05);
+  --chart-axis: #a1a1aa;
+}
+
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;
@@ -12,12 +67,94 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-100;
+    background: var(--surface-page);
+    color: var(--text-primary);
+    @apply antialiased;
     font-feature-settings: "tnum" 1, "kern" 1;
   }
 
+  .dark body {
+    background: linear-gradient(165deg, #09090b 0%, #0c0c10 40%, #09090b 100%);
+    background-attachment: fixed;
+  }
+
   h1, h2, h3 {
-    @apply tracking-tight text-slate-900 dark:text-slate-50;
+    @apply tracking-tight;
+    color: var(--text-primary);
+  }
+}
+
+@layer components {
+  .text-primary {
+    color: var(--text-primary);
+  }
+  .text-secondary {
+    color: var(--text-secondary);
+  }
+  .text-muted {
+    color: var(--text-muted);
+  }
+  .text-caption {
+    color: var(--text-caption);
+  }
+
+  .surface-card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-card);
+    @apply rounded-2xl transition-shadow duration-200;
+  }
+
+  .surface-card:hover {
+    @apply dark:shadow-[var(--shadow-elevated)];
+  }
+
+  .surface-muted {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-subtle);
+    @apply rounded-xl;
+  }
+
+  .surface-nav {
+    background: var(--surface-nav);
+    border-color: var(--border-default);
+    @apply backdrop-blur-xl;
+  }
+
+  .surface-overlay {
+    background: var(--surface-overlay);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .chart-well {
+    background: var(--surface-chart);
+    border: 1px solid var(--border-subtle);
+    @apply rounded-xl p-3 sm:p-4;
+  }
+
+  .divider {
+    border-color: var(--border-subtle);
+  }
+
+  .list-divider > * + * {
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .accent-ring:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--surface-page), 0 0 0 4px var(--accent-ring);
+  }
+
+  .nav-active {
+    @apply bg-indigo-600 text-white shadow-sm;
+  }
+
+  .dark .nav-active {
+    background: var(--accent-muted);
+    color: var(--accent);
+    box-shadow: none;
+    @apply ring-1 ring-indigo-500/25;
   }
 }
 
@@ -56,6 +193,10 @@
       padding-right: 0;
     }
   }
+
+  .page-stack {
+    @apply space-y-8 sm:space-y-10;
+  }
 }
 
 .recharts-wrapper {
@@ -64,13 +205,9 @@
 
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line {
-  stroke: var(--chart-grid, #f1f5f9);
+  stroke: var(--chart-grid);
 }
 
-.dark {
-  --chart-grid: #334155;
-}
-
-:root:not(.dark) {
-  --chart-grid: #f1f5f9;
+.recharts-default-legend {
+  color: var(--text-secondary) !important;
 }

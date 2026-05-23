@@ -82,7 +82,7 @@ export function IncomePage({ income, onChange }: Props) {
   const totalMonthly = income.reduce((sum, s) => sum + toMonthly(s.amount, s.frequency), 0);
 
   return (
-    <div className="space-y-8">
+    <div className="page-stack">
       <PageHeader
         title="Income"
         subtitle="Add all sources of income. Amounts are normalized to a monthly total for your plan."
@@ -139,7 +139,7 @@ export function IncomePage({ income, onChange }: Props) {
               </span>
             }
           />
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="list-divider">
             {income.map((source) => (
               <div
                 key={source.id}

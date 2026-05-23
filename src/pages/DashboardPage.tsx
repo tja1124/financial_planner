@@ -34,8 +34,6 @@ interface Props {
   onNavigate?: (page: Page) => void;
 }
 
-const COLORS = ['#6366f1', '#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
-
 export function DashboardPage({ data, summary, onNavigate }: Props) {
   const chart = useChartTheme();
   const {
@@ -66,11 +64,11 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
   const expensePieData = Object.entries(categoryData).map(([name, value]) => ({ name, value }));
 
   const budgetBarData = [
-    { name: 'Income', amount: totalMonthlyIncome, fill: '#10b981' },
-    { name: 'Expenses', amount: totalMonthlyExpenses, fill: '#ef4444' },
-    { name: 'Debt', amount: totalMonthlyDebtPayments, fill: '#f59e0b' },
-    { name: 'Savings', amount: totalMonthlySavingsContributions, fill: '#6366f1' },
-    { name: 'Leftover', amount: Math.max(0, monthlyLeftover), fill: '#3b82f6' },
+    { name: 'Income', amount: totalMonthlyIncome, fill: chart.series.income },
+    { name: 'Expenses', amount: totalMonthlyExpenses, fill: chart.series.expenses },
+    { name: 'Debt', amount: totalMonthlyDebtPayments, fill: chart.series.debt },
+    { name: 'Savings', amount: totalMonthlySavingsContributions, fill: chart.series.savings },
+    { name: 'Leftover', amount: Math.max(0, monthlyLeftover), fill: chart.series.leftover },
   ].filter((d) => d.amount > 0);
 
   if (isEmpty) {
@@ -103,7 +101,7 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="page-stack">
       <PageHeader
         title="Dashboard"
         subtitle="Your complete financial picture — budget, 12-month forecast, and recommended actions."
@@ -161,24 +159,27 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
         />
         <ChartContainer height={300}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={cashflow} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
-            <XAxis dataKey="label" tick={{ fontSize: 10, fill: chart.tick }} />
-            <YAxis tick={{ fontSize: 10, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
+          <ComposedChart data={cashflow} margin={{ top: 12, right: 8, left: -4, bottom: 4 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: chart.tick }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
             <Tooltip
               formatter={(v, name) => [formatCurrency(Number(v)), String(name)]}
               labelFormatter={(l) => l}
               contentStyle={chart.tooltip.contentStyle}
+              labelStyle={chart.tooltip.labelStyle}
+              itemStyle={chart.tooltip.itemStyle}
+              cursor={{ fill: chart.cursor }}
             />
-            <Legend />
-            <Bar dataKey="income" fill="#10b981" name="Income" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="debtPayments" fill="#f59e0b" name="Debt" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="savings" fill="#6366f1" name="Savings" radius={[4, 4, 0, 0]} />
+            <Legend wrapperStyle={chart.legendStyle} />
+            <Bar dataKey="income" fill={chart.series.income} name="Income" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="expenses" fill={chart.series.expenses} name="Expenses" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="debtPayments" fill={chart.series.debt} name="Debt" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="savings" fill={chart.series.savings} name="Savings" radius={[4, 4, 0, 0]} />
             <Line
               type="monotone"
               dataKey="cumulativeCash"
-              stroke="#3b82f6"
+              stroke={chart.series.cumulative}
               strokeWidth={2.5}
               dot={false}
               name="Cumulative cash"
@@ -186,7 +187,7 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
           </ComposedChart>
         </ResponsiveContainer>
         </ChartContainer>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t divider">
           <ForecastStat label="Year-end cash" value={cashflow[cashflow.length - 1]?.cumulativeCash ?? 0} />
           <ForecastStat
             label="Avg monthly leftover"
@@ -209,11 +210,11 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
             <CardHeader title="Monthly Budget" />
             <ChartContainer height={240}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={budgetBarData} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: chart.tick }} />
-                <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} contentStyle={chart.tooltip.contentStyle} />
+              <BarChart data={budgetBarData} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} contentStyle={chart.tooltip.contentStyle} labelStyle={chart.tooltip.labelStyle} cursor={{ fill: chart.cursor }} />
                 <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
                   {budgetBarData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
@@ -241,11 +242,11 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
                   dataKey="value"
                 >
                   {expensePieData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    <Cell key={i} fill={chart.series.pie[i % chart.series.pie.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} contentStyle={chart.tooltip.contentStyle} />
-                <Legend formatter={(value) => <span className="text-xs text-slate-600 dark:text-slate-400">{value}</span>} />
+                <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Amount']} contentStyle={chart.tooltip.contentStyle} labelStyle={chart.tooltip.labelStyle} />
+                <Legend wrapperStyle={chart.legendStyle} />
               </PieChart>
             </ResponsiveContainer>
             </ChartContainer>
@@ -262,12 +263,12 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
               return (
                 <div key={goal.id}>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="font-medium text-slate-700 dark:text-slate-200">{goal.name}</span>
-                    <span className="text-slate-500 dark:text-slate-400 tabular-nums">
+                    <span className="font-medium text-primary">{goal.name}</span>
+                    <span className="text-secondary tabular-nums">
                       {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
                     </span>
                   </div>
-                  <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-zinc-100 dark:bg-zinc-800/80 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
                       style={{ width: `${pct}%` }}
@@ -285,9 +286,9 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
 
 function ForecastStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="text-base font-bold text-slate-800 dark:text-slate-100 mt-0.5 tabular-nums">{formatCurrency(value)}</p>
+    <div className="surface-muted p-3.5 text-center">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{label}</p>
+      <p className="text-base font-bold text-primary mt-1 tabular-nums">{formatCurrency(value)}</p>
     </div>
   );
 }

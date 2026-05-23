@@ -63,7 +63,7 @@ export function ScenariosPage({ data }: Props) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="page-stack">
       <PageHeader
         title="Scenarios"
         subtitle="Compare how different strategies affect your monthly cash flow, debt timeline, and savings."
@@ -78,23 +78,23 @@ export function ScenariosPage({ data }: Props) {
               key={preset}
               type="button"
               onClick={() => setSelected(preset)}
-              className={`text-left p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+              className={`text-left p-4 sm:p-5 rounded-2xl border transition-all duration-200 cursor-pointer ${
                 isActive
-                  ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/50 shadow-sm'
-                  : 'border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-600'
+                  ? 'border-indigo-500/40 bg-indigo-500/[0.08] ring-1 ring-indigo-500/25 shadow-sm dark:shadow-indigo-500/10'
+                  : 'surface-card hover:border-indigo-500/20 dark:hover:bg-[var(--surface-secondary)]'
               }`}
             >
-              <p className={`font-semibold text-sm ${isActive ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-800 dark:text-slate-100'}`}>
+              <p className={`font-semibold text-sm ${isActive ? 'text-indigo-700 dark:text-indigo-300' : 'text-primary'}`}>
                 {PRESET_LABELS[preset]}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{PRESET_DESCRIPTIONS[preset]}</p>
+              <p className="text-xs text-secondary mt-1.5 line-clamp-2">{PRESET_DESCRIPTIONS[preset]}</p>
               <p
                 className={`text-lg font-bold mt-3 tabular-nums ${
                   metrics.monthlyLeftover >= 0 ? 'text-emerald-600' : 'text-red-600'
                 }`}
               >
                 {formatCurrency(metrics.monthlyLeftover)}
-                <span className="text-xs font-normal text-slate-500 dark:text-slate-400">/mo left</span>
+                <span className="text-xs font-normal text-muted">/mo left</span>
               </p>
             </button>
           );
@@ -190,7 +190,7 @@ export function ScenariosPage({ data }: Props) {
                       {formatCurrency(s.monthlyLeftover)}
                     </span>
                   </div>
-                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-zinc-100 dark:bg-zinc-800/80 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full ${positive ? 'bg-emerald-500' : 'bg-red-400'}`}
                       style={{ width: `${pct}%` }}
@@ -222,7 +222,7 @@ export function ScenariosPage({ data }: Props) {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="[&_tr]:border-t [&_tr]:border-[var(--border-subtle)] [&_tr:first-child]:border-0">
               <CompareRow
                 label="Monthly leftover"
                 values={allScenarios.map((s) => formatCurrency(s.monthlyLeftover))}

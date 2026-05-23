@@ -40,7 +40,7 @@ export function DataControls({
           aria-haspopup="true"
         >
           Data
-          <span className="text-slate-400 dark:text-slate-500 ml-0.5">▾</span>
+          <span className="text-caption ml-0.5">▾</span>
         </Button>
 
         {menuOpen && (
@@ -51,11 +51,11 @@ export function DataControls({
               aria-label="Close menu"
               onClick={() => setMenuOpen(false)}
             />
-            <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-600 py-2 z-50">
+            <div className="absolute right-0 top-full mt-2 w-64 surface-overlay rounded-xl py-2 z-50">
               {lastSaved && (
-                <p className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700">
+                <p className="px-4 py-2.5 text-xs text-caption border-b divider">
                   Last saved:{' '}
-                  <span className="font-medium text-slate-600 dark:text-slate-300">{lastSaved}</span>
+                  <span className="font-medium text-secondary">{lastSaved}</span>
                 </p>
               )}
               <MenuItem onClick={() => { onExport(); setMenuOpen(false); }}>
@@ -67,7 +67,7 @@ export function DataControls({
               <MenuItem onClick={() => { onLoadDemo(); setMenuOpen(false); }}>
                 Load demo data
               </MenuItem>
-              <div className="border-t border-slate-100 dark:border-slate-700 mt-1 pt-1">
+              <div className="border-t divider mt-1 pt-1 mx-2">
                 <MenuItem
                   danger
                   onClick={() => {
@@ -121,10 +121,10 @@ function MenuItem({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+      className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer rounded-lg mx-0 ${
         danger
-          ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40'
-          : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+          ? 'text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10'
+          : 'text-secondary hover:text-primary hover:bg-slate-50 dark:hover:bg-white/[0.04]'
       }`}
     >
       {children}

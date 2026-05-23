@@ -81,7 +81,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="page-stack">
       <PageHeader
         title="Savings Goals"
         subtitle="Set targets and dates. We'll estimate monthly contributions and track progress."
