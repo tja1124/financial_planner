@@ -135,24 +135,20 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
           />
         </FadeIn>
 
-        {recommendations.length === 0 ? (
-          <div data-tour="insights-section">
-            <HealthScoreCard health={health} />
-          </div>
-        ) : (
-          <HealthScoreCard health={health} />
-        )}
+        <HealthScoreCard health={health} />
 
-        {recommendations.length > 0 && (
-          <AnimatedCard delay={0.04} hoverLift data-tour="insights-section">
-            <CardHeader
-              title="Insights"
-              subtitle={
-                visibleInsightCount > 0
+        <AnimatedCard delay={0.04} hoverLift data-tour="insights-section">
+          <CardHeader
+            title="Insights"
+            subtitle={
+              recommendations.length === 0
+                ? 'Personalized actions for your plan'
+                : visibleInsightCount > 0
                   ? `${visibleInsightCount} prioritized for your plan`
                   : 'All acknowledged — restore to review'
-              }
-            />
+            }
+          />
+          {recommendations.length > 0 ? (
             <RecommendationCard
               recommendations={recommendations}
               acknowledgedIds={settings.acknowledgedInsightIds}
@@ -160,8 +156,12 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
               onRestoreAll={handleRestoreInsights}
               onNavigate={onNavigate}
             />
-          </AnimatedCard>
-        )}
+          ) : (
+            <p className="text-sm text-secondary leading-relaxed">
+              Insights appear as you add income, expenses, and goals to your plan.
+            </p>
+          )}
+        </AnimatedCard>
 
         <FadeIn delay={0.06}>
           <section>

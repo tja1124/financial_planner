@@ -261,17 +261,18 @@ export function ExpensesPage({ expenses, onChange }: Props) {
         subtitle="Track monthly bills and planned one-time expenses like vacations or weddings."
       />
 
-      <Card>
-        <CardHeader title={editingId ? 'Edit Expense' : 'Add Expense'} />
+      <Card data-tour="expense-mode-toggle">
+        <div className="mb-5">
+          <CardHeader title={editingId ? 'Edit Expense' : 'Add Expense'} />
 
-        {/* Mode toggle */}
-        <div className="flex gap-2 mb-5" data-tour="expense-mode-toggle">
-          <ModeChip active={mode === 'recurring'} onClick={() => switchMode('recurring')}>
-            Monthly recurring
-          </ModeChip>
-          <ModeChip active={mode === 'planned'} onClick={() => switchMode('planned')}>
-            Planned by date
-          </ModeChip>
+          <div className="flex gap-2">
+            <ModeChip active={mode === 'recurring'} onClick={() => switchMode('recurring')}>
+              Monthly recurring
+            </ModeChip>
+            <ModeChip active={mode === 'planned'} onClick={() => switchMode('planned')}>
+              Planned by date
+            </ModeChip>
+          </div>
         </div>
 
         <FormAlerts validation={validation} />

@@ -314,7 +314,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             </div>
           </Card>
 
-          <Card data-tour="debt-strategy-card">
+          <Card>
             <CardHeader
               title="Strategy Comparison"
               subtitle="Same debts, different payoff methods"
@@ -328,7 +328,10 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                 </button>
               }
             />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div
+              data-tour="debt-strategy-card"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"
+            >
               {strategyResults.map((result) => {
                 const isBest = bestStrategy?.strategy === result.strategy && debts.length > 0;
                 return (

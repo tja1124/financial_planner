@@ -345,23 +345,33 @@
 }
 
 /* ─── driver.js tour overrides ─── */
+/*
+ * Rules:
+ * - Only the overlay OUTSIDE the spotlight cutout is dimmed.
+ * - .driver-active-element and all descendants stay fully opaque, unfiltered, unblurred.
+ * - A clean indigo outline ring is the only visual treatment on the target.
+ * - All 7 steps share identical padding, radius, popover width, and button sizes.
+ */
 
-/* Lighter dim — spotlight reads as “lifted” not buried */
+/* Overlay — no blur, just a semi-transparent fill */
 .driver-overlay {
-  backdrop-filter: blur(1px);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
-/* Popover */
+/* ── Popover ── */
 .fp-tour-popover.driver-popover {
   background: var(--surface-overlay) !important;
   border: 1px solid var(--border-default) !important;
   border-radius: 0.875rem !important;
   box-shadow: var(--shadow-elevated) !important;
   padding: 1rem 1.125rem 1.125rem !important;
-  max-width: 288px !important;
-  min-width: 220px !important;
+  width: 280px !important;
+  max-width: calc(100vw - 2rem) !important;
+  min-width: 0 !important;
   font-family: inherit !important;
   z-index: 1000000001 !important;
+  box-sizing: border-box !important;
 }
 
 .fp-tour-popover .driver-popover-title {
@@ -369,7 +379,7 @@
   font-weight: 600 !important;
   line-height: 1.35 !important;
   color: var(--text-primary) !important;
-  margin: 0 0 0.25rem !important;
+  margin: 0 0 0.3125rem !important;
   padding-right: 1.75rem !important;
 }
 
@@ -395,6 +405,7 @@
   color: var(--text-muted) !important;
   flex: 1 !important;
   min-width: 0 !important;
+  white-space: nowrap !important;
 }
 
 .fp-tour-popover .driver-popover-navigation-btns {
@@ -404,6 +415,7 @@
   flex-shrink: 0 !important;
 }
 
+/* ── Buttons — shared base ── */
 .fp-tour-popover .driver-popover-prev-btn,
 .fp-tour-popover .driver-popover-next-btn,
 .fp-tour-popover .driver-popover-close-btn {
@@ -411,13 +423,14 @@
   font-weight: 500 !important;
   border-radius: 0.5rem !important;
   cursor: pointer !important;
-  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s !important;
+  transition: background-color 0.15s, color 0.15s !important;
   border: none !important;
   outline: none !important;
   line-height: 1.2 !important;
   text-shadow: none !important;
 }
 
+/* Back — ghost */
 .fp-tour-popover .driver-popover-prev-btn {
   font-size: 0.8125rem !important;
   background: transparent !important;
@@ -430,26 +443,25 @@
   color: var(--text-primary) !important;
 }
 
+/* Next / Finish — indigo filled */
 .fp-tour-popover .driver-popover-next-btn {
   font-size: 0.8125rem !important;
   background: #4f46e5 !important;
   color: #fff !important;
   padding: 0.4375rem 0.875rem !important;
   min-height: 32px !important;
-  box-shadow: 0 1px 2px rgb(79 70 229 / 0.25) !important;
 }
 .fp-tour-popover .driver-popover-next-btn:hover {
   background: #4338ca !important;
 }
-
 .dark .fp-tour-popover .driver-popover-next-btn {
   background: #6366f1 !important;
-  box-shadow: 0 1px 3px rgb(99 102 241 / 0.35) !important;
 }
 .dark .fp-tour-popover .driver-popover-next-btn:hover {
   background: #4f46e5 !important;
 }
 
+/* Close × */
 .fp-tour-popover .driver-popover-close-btn {
   position: absolute !important;
   top: 0.625rem !important;
@@ -471,7 +483,7 @@
   color: var(--text-primary) !important;
 }
 
-/* Arrow fill matches popover surface */
+/* ── Arrow — fill matches popover surface so border doesn't bleed ── */
 .fp-tour-popover .driver-popover-arrow-side-bottom.driver-popover-arrow {
   border-top-color: var(--surface-overlay) !important;
 }
@@ -485,35 +497,34 @@
   border-left-color: var(--surface-overlay) !important;
 }
 
-/* Spotlight — bright ring + soft glow */
+/* ── Spotlight ring — identical for every step ── */
 .driver-active-element {
-  border-radius: 0.875rem !important;
-  box-shadow:
-    0 0 0 2px rgb(255 255 255 / 0.95),
-    0 0 0 5px rgb(99 102 241 / 0.45),
-    0 8px 32px rgb(99 102 241 / 0.2) !important;
+  /* Preserve all colour, opacity, and rendering of the target */
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  border-radius: 0.75rem !important;
+  /* Thin indigo outline + faint halo — nothing more */
+  outline: 2px solid rgb(99 102 241 / 0.85) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 5px rgb(99 102 241 / 0.14) !important;
+}
+
+/* Children must also stay fully visible */
+.driver-active-element *,
+.driver-active-element *::before,
+.driver-active-element *::after {
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
 }
 
 .dark .driver-active-element {
-  box-shadow:
-    0 0 0 2px rgb(255 255 255 / 0.12),
-    0 0 0 5px rgb(129 140 248 / 0.55),
-    0 12px 40px rgb(99 102 241 / 0.35) !important;
+  outline-color: rgb(129 140 248 / 0.9) !important;
+  box-shadow: 0 0 0 5px rgb(129 140 248 / 0.18) !important;
 }
 
-@media (max-width: 640px) {
-  .fp-tour-popover.driver-popover {
-    max-width: min(288px, calc(100vw - 2rem)) !important;
-    min-width: unset !important;
-  }
-
-  /* On narrow screens, keep popover below targets that use side:left */
-  .fp-tour-popover.driver-popover {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-}
-
+/* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .driver-popover,
   .driver-overlay,
@@ -522,3 +533,5 @@
     animation: none !important;
   }
 }
+
+
