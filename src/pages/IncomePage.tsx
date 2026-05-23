@@ -16,6 +16,7 @@ import { PageHeader } from '../components/PageHeader';
 import { FormAlerts } from '../components/FormAlerts';
 import { EmptyState } from '../components/EmptyState';
 import { useAppActions } from '../context/AppActionsContext';
+import { EMPTY_STATE_ICONS } from '../components/icons';
 
 const FREQUENCY_OPTIONS = [
   { value: 'monthly', label: 'Monthly' },
@@ -167,7 +168,7 @@ export function IncomePage({ income, onChange }: Props) {
       ) : (
         <Card>
           <EmptyState
-            icon="💰"
+            icon={EMPTY_STATE_ICONS.income}
             title="No income sources yet"
             description="Add your salary, freelance work, or other income to power your dashboard and forecasts."
           />

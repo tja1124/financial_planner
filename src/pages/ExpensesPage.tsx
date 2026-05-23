@@ -20,6 +20,8 @@ import { PageHeader } from '../components/PageHeader';
 import { FormAlerts } from '../components/FormAlerts';
 import { EmptyState } from '../components/EmptyState';
 import { useAppActions } from '../context/AppActionsContext';
+import { AppIcon, EXPENSE_CATEGORY_ICONS, EMPTY_STATE_ICONS, IconTile } from '../components/icons';
+import { Calendar, CheckCircle2, X } from 'lucide-react';
 
 const CATEGORY_OPTIONS: { value: ExpenseCategory; label: string }[] = [
   { value: 'Housing', label: 'Housing' },
@@ -33,19 +35,6 @@ const CATEGORY_OPTIONS: { value: ExpenseCategory; label: string }[] = [
   { value: 'Personal', label: 'Personal' },
   { value: 'Other', label: 'Other' },
 ];
-
-const CATEGORY_EMOJIS: Record<ExpenseCategory, string> = {
-  Housing: '🏠',
-  Transportation: '🚗',
-  Food: '🍔',
-  Healthcare: '💊',
-  Utilities: '💡',
-  Subscriptions: '📱',
-  Entertainment: '🎬',
-  Clothing: '👕',
-  Personal: '💆',
-  Other: '📦',
-};
 
 interface Props {
   expenses: Expense[];
@@ -383,7 +372,9 @@ export function ExpensesPage({ expenses, onChange }: Props) {
             </div>
             {plannedPreview && plannedPreview.monthly > 0 && (
               <div className="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-50/80 dark:bg-indigo-500/[0.08] border border-indigo-100 dark:border-indigo-500/20">
-                <span className="text-indigo-500 text-lg shrink-0">📅</span>
+                <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                  <AppIcon icon={Calendar} size="sm" />
+                </span>
                 <p className="text-sm text-indigo-700 dark:text-indigo-300">
                   <span className="font-semibold">
                     {formatCurrency(plannedPreview.monthly)}/mo
@@ -468,7 +459,7 @@ export function ExpensesPage({ expenses, onChange }: Props) {
       ) : (
         <Card>
           <EmptyState
-            icon="💸"
+            icon={EMPTY_STATE_ICONS.expenses}
             title="No expenses yet"
             description="Add monthly bills, or a planned expense like a wedding or vacation with a target date."
           />
@@ -516,7 +507,7 @@ function RecurringExpenseRow({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between py-4 gap-3">
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <span className="text-xl shrink-0">{CATEGORY_EMOJIS[expense.category]}</span>
+        <IconTile icon={EXPENSE_CATEGORY_ICONS[expense.category]} variant="muted" size="sm" />
         <div className="min-w-0">
           <p className="font-medium text-primary truncate">{expense.name}</p>
           <div className="flex flex-wrap items-center gap-2 mt-0.5">
@@ -569,7 +560,7 @@ function PlannedExpenseRow({
     <div className="py-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
-          <span className="text-xl shrink-0 mt-0.5">{CATEGORY_EMOJIS[expense.category]}</span>
+          <IconTile icon={EXPENSE_CATEGORY_ICONS[expense.category]} variant="muted" size="sm" className="mt-0.5" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-medium text-primary truncate">{expense.name}</p>
@@ -582,8 +573,9 @@ function PlannedExpenseRow({
                 </span>
               )}
               {isComplete && (
-                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                  Covered ✓
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                  <AppIcon icon={CheckCircle2} size="xs" />
+                  Covered
                 </span>
               )}
             </div>
@@ -691,7 +683,9 @@ function ContributeButton({
         className="w-28 rounded-lg border border-[var(--border-default)] bg-[var(--surface-secondary)] text-primary text-sm py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
       />
       <Button size="sm" onClick={handleSubmit}>Save</Button>
-      <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setAmount(''); }}>✕</Button>
+      <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setAmount(''); }} aria-label="Cancel">
+        <AppIcon icon={X} size="sm" />
+      </Button>
     </div>
   );
 }

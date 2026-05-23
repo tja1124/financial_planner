@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Button } from './Button';
+import { IconTile } from './icons/IconTile';
+import { ONBOARDING_CHOICE_ICONS, ONBOARDING_STEP_ICONS } from './icons/maps';
 
 type OnboardingChoice = 'blank' | 'demo' | null;
 
@@ -15,17 +17,14 @@ export function Onboarding({ onComplete }: Props) {
     {
       title: 'Welcome to FinancePlanner',
       body: 'A private, local-first tool to plan income, expenses, debt payoff, and savings — no bank connections required.',
-      icon: '🌱',
     },
     {
       title: 'Your data stays on this device',
       body: 'Everything is saved in your browser’s local storage. Nothing is sent to a server. Export a backup anytime from the header menu.',
-      icon: '🔒',
     },
     {
       title: 'How would you like to start?',
       body: 'Explore with sample numbers, or build your plan from scratch.',
-      icon: '✨',
       isChoice: true,
     },
     {
@@ -34,11 +33,11 @@ export function Onboarding({ onComplete }: Props) {
         choice === 'demo'
           ? 'Demo data is loaded. Review the dashboard, then customize income and expenses to match your life.'
           : 'Start by adding your income sources — your dashboard and forecasts update automatically.',
-      icon: '🚀',
     },
   ];
 
   const current = steps[step];
+  const StepIcon = ONBOARDING_STEP_ICONS[step];
   const isLast = step === steps.length - 1;
   const isChoiceStep = step === 2;
 
@@ -67,9 +66,9 @@ export function Onboarding({ onComplete }: Props) {
 
         <div className="p-8 sm:p-10">
           <div className="text-center mb-8">
-            <span className="text-5xl block mb-4" aria-hidden>
-              {current.icon}
-            </span>
+            <div className="flex justify-center mb-4">
+              <IconTile icon={StepIcon} variant="indigo" size="xl" />
+            </div>
             <h1 className="text-2xl font-bold text-primary tracking-tight">{current.title}</h1>
             <p className="text-secondary mt-3 text-sm sm:text-base leading-relaxed">{current.body}</p>
           </div>
@@ -85,8 +84,8 @@ export function Onboarding({ onComplete }: Props) {
                     : 'border-[var(--border-subtle)] surface-muted hover:border-indigo-500/20'
                 }`}
               >
-                <span className="text-2xl">📝</span>
-                <p className="font-semibold text-primary mt-2">Start blank</p>
+                <IconTile icon={ONBOARDING_CHOICE_ICONS.blank} variant="muted" size="md" />
+                <p className="font-semibold text-primary mt-3">Start blank</p>
                 <p className="text-xs text-muted mt-1">Enter your own numbers</p>
               </button>
               <button
@@ -98,8 +97,8 @@ export function Onboarding({ onComplete }: Props) {
                     : 'border-[var(--border-subtle)] surface-muted hover:border-indigo-500/20'
                 }`}
               >
-                <span className="text-2xl">📊</span>
-                <p className="font-semibold text-primary mt-2">Load demo data</p>
+                <IconTile icon={ONBOARDING_CHOICE_ICONS.demo} variant="muted" size="md" />
+                <p className="font-semibold text-primary mt-3">Load demo data</p>
                 <p className="text-xs text-muted mt-1">Explore with sample finances</p>
               </button>
             </div>

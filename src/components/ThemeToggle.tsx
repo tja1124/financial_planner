@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { Monitor, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemePreference } from '../utils/theme';
+import { AppIcon } from './icons';
 
-const OPTIONS: { value: ThemePreference; label: string; icon: string }[] = [
-  { value: 'light', label: 'Light', icon: '☀️' },
-  { value: 'dark', label: 'Dark', icon: '🌙' },
-  { value: 'system', label: 'System', icon: '💻' },
+const OPTIONS: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon },
+  { value: 'system', label: 'System', icon: Monitor },
 ];
 
 export function ThemeToggle() {
@@ -24,7 +26,7 @@ export function ThemeToggle() {
         aria-expanded={open}
         aria-haspopup="listbox"
       >
-        <span className="text-base leading-none">{current.icon}</span>
+        <AppIcon icon={current.icon} size="sm" />
       </button>
 
       {open && (
@@ -53,7 +55,7 @@ export function ThemeToggle() {
                       : 'text-secondary hover:bg-slate-50 dark:hover:bg-white/[0.04]'
                   }`}
                 >
-                  <span>{opt.icon}</span>
+                  <AppIcon icon={opt.icon} size="sm" />
                   {opt.label}
                 </button>
               </li>

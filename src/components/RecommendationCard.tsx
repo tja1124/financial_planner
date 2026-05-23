@@ -1,4 +1,6 @@
+import { ChevronRight } from 'lucide-react';
 import type { Recommendation, Page } from '../types';
+import { AppIcon, PRIORITY_ICONS } from './icons';
 
 interface Props {
   recommendations: Recommendation[];
@@ -45,6 +47,7 @@ export function RecommendationCard({ recommendations, onNavigate }: Props) {
     <div className="space-y-2">
       {recommendations.map((rec) => {
         const style = priorityStyles[rec.priority];
+        const PriorityIcon = PRIORITY_ICONS[rec.priority];
         return (
           <div
             key={rec.id}
@@ -52,10 +55,11 @@ export function RecommendationCard({ recommendations, onNavigate }: Props) {
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
+                <div className="flex items-center gap-1.5 flex-wrap mb-1">
                   <span
-                    className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${style.badge}`}
+                    className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${style.badge}`}
                   >
+                    <AppIcon icon={PriorityIcon} size="xs" />
                     {priorityLabels[rec.priority]}
                   </span>
                 </div>
@@ -66,9 +70,10 @@ export function RecommendationCard({ recommendations, onNavigate }: Props) {
                 <button
                   type="button"
                   onClick={() => onNavigate(rec.actionPage!)}
-                  className="shrink-0 min-h-[44px] px-3 flex items-center text-xs font-semibold text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 cursor-pointer accent-ring rounded-lg"
+                  className="shrink-0 min-h-[44px] px-3 flex items-center gap-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 cursor-pointer accent-ring rounded-lg"
                 >
-                  Go →
+                  Go
+                  <AppIcon icon={ChevronRight} size="xs" />
                 </button>
               )}
             </div>

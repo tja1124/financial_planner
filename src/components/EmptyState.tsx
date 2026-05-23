@@ -1,15 +1,25 @@
+import type { LucideIcon } from 'lucide-react';
+import { IconTile } from './icons/IconTile';
+
 interface EmptyStateProps {
-  icon: string;
+  icon: LucideIcon;
+  iconVariant?: 'muted' | 'indigo' | 'emerald' | 'amber';
   title: string;
   description: string;
   action?: React.ReactNode;
 }
 
-export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+export function EmptyState({
+  icon,
+  iconVariant = 'muted',
+  title,
+  description,
+  action,
+}: EmptyStateProps) {
   return (
     <div className="text-center py-16 sm:py-20 px-4">
-      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl surface-muted text-3xl mb-5">
-        {icon}
+      <div className="mb-5 flex justify-center">
+        <IconTile icon={icon} variant={iconVariant} size="xl" />
       </div>
       <p className="font-semibold text-lg text-primary">{title}</p>
       <p className="text-sm text-secondary mt-2 max-w-sm mx-auto leading-relaxed">{description}</p>

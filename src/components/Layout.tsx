@@ -1,25 +1,26 @@
 import React, { useState } from 'react';
+import { Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Page } from '../types';
 import { DataControls } from './DataControls';
 import { ThemeToggle } from './ThemeToggle';
 import { SettingsModal } from './SettingsModal';
 import { useMotion } from '../hooks/useMotion';
+import { AppIcon, BRAND_ICON, NAV_ICONS } from './icons';
 
 interface NavItem {
   id: Page;
   label: string;
-  icon: string;
   shortLabel?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: '📊', shortLabel: 'Home' },
-  { id: 'scenarios', label: 'Scenarios', icon: '🔮', shortLabel: 'Plans' },
-  { id: 'income', label: 'Income', icon: '💰' },
-  { id: 'expenses', label: 'Expenses', icon: '💸' },
-  { id: 'debt', label: 'Debt', icon: '🏦', shortLabel: 'Debt' },
-  { id: 'savings', label: 'Savings', icon: '🎯' },
+  { id: 'dashboard', label: 'Dashboard', shortLabel: 'Home' },
+  { id: 'scenarios', label: 'Scenarios', shortLabel: 'Plans' },
+  { id: 'income', label: 'Income' },
+  { id: 'expenses', label: 'Expenses' },
+  { id: 'debt', label: 'Debt', shortLabel: 'Debt' },
+  { id: 'savings', label: 'Savings' },
 ];
 
 interface Props {
@@ -58,8 +59,8 @@ export function Layout({
               onClick={() => onNavigate('dashboard')}
               className="flex items-center gap-2.5 shrink-0 cursor-pointer group accent-ring rounded-lg -ml-1 pl-1 min-h-[44px]"
             >
-              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold shadow-sm group-hover:bg-indigo-500 dark:shadow-indigo-500/25 transition-colors">
-                FP
+              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white shadow-sm group-hover:bg-indigo-500 dark:shadow-indigo-500/25 transition-colors">
+                <AppIcon icon={BRAND_ICON} size="sm" className="text-white" />
               </span>
               <span className="font-bold text-primary text-base tracking-tight hidden sm:block">
                 FinancePlanner
@@ -85,9 +86,7 @@ export function Layout({
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-slate-100/80 dark:hover:bg-white/[0.05] transition-colors cursor-pointer accent-ring"
                 aria-label="Settings"
               >
-                <span className="text-lg" aria-hidden>
-                  ⚙
-                </span>
+                <AppIcon icon={Settings} size="md" />
               </button>
               <ThemeToggle />
               <DataControls
@@ -167,20 +166,22 @@ function NavButton({
   showLabel?: boolean;
   mobile?: boolean;
 }) {
+  const Icon = NAV_ICONS[item.id];
+
   if (mobile) {
     return (
       <button
         type="button"
         onClick={onClick}
         aria-current={active ? 'page' : undefined}
-        className={`flex-1 flex flex-col items-center justify-center min-h-[56px] py-2 gap-0.5 min-w-0 cursor-pointer relative transition-colors touch-manipulation ${
+        className={`flex-1 flex flex-col items-center justify-center min-h-[56px] py-2 gap-1 min-w-0 cursor-pointer relative transition-colors touch-manipulation ${
           active ? 'text-indigo-600 dark:text-indigo-300' : 'text-muted'
         }`}
       >
         {active && (
           <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
         )}
-        <span className="text-xl leading-none">{item.icon}</span>
+        <AppIcon icon={Icon} size="md" />
         <span className="text-[10px] font-semibold truncate w-full text-center px-0.5">
           {item.shortLabel ?? item.label.split(' ')[0]}
         </span>
@@ -193,15 +194,13 @@ function NavButton({
       type="button"
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
-      className={`px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all cursor-pointer whitespace-nowrap accent-ring ${
+      className={`inline-flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all cursor-pointer whitespace-nowrap accent-ring ${
         active
           ? 'nav-active'
           : 'text-secondary hover:text-primary hover:bg-slate-100/80 dark:hover:bg-white/[0.05]'
       }`}
     >
-      <span className="mr-1.5" aria-hidden>
-        {item.icon}
-      </span>
+      <AppIcon icon={Icon} size="sm" />
       {showLabel && item.label}
     </button>
   );

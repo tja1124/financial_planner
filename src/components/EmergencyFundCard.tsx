@@ -7,8 +7,10 @@ import {
   getEmergencyFundStatus,
 } from '../utils/emergencyFund';
 import { parseNonNegativeInput } from '../utils/validation';
+import { Shield } from 'lucide-react';
 import { Button } from './Button';
 import { Input } from './Input';
+import { IconTile } from './icons/IconTile';
 
 interface Props {
   emergencyFund: EmergencyFund;
@@ -57,10 +59,8 @@ export function EmergencyFundCard({
       <div className="p-5 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
           <div>
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="text-lg" aria-hidden>
-                🛡️
-              </span>
+            <div className="flex items-center gap-2.5 flex-wrap mb-1">
+              <IconTile icon={Shield} variant="cyan" size="sm" />
               <h2 className="text-base font-semibold text-primary tracking-tight">
                 Emergency Fund
               </h2>

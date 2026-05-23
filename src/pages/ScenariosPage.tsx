@@ -13,6 +13,7 @@ import { PageHeader } from '../components/PageHeader';
 import { Card, CardHeader } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { MetricRow } from '../components/MetricRow';
+import { EMPTY_STATE_ICONS } from '../components/icons';
 
 interface Props {
   data: AppData;
@@ -53,7 +54,7 @@ export function ScenariosPage({ data }: Props) {
         />
         <Card>
           <EmptyState
-            icon="🔮"
+            icon={EMPTY_STATE_ICONS.scenarios}
             title="Add your finances first"
             description="Enter income and expenses, then return here to compare what-if plans."
           />

@@ -18,6 +18,8 @@ import { FormAlerts } from '../components/FormAlerts';
 import { EmptyState } from '../components/EmptyState';
 import { EmergencyFundCard } from '../components/EmergencyFundCard';
 import { useAppActions } from '../context/AppActionsContext';
+import { AppIcon, EMPTY_STATE_ICONS } from '../components/icons';
+import { CheckCircle2, X } from 'lucide-react';
 
 interface Props {
   emergencyFund: EmergencyFund;
@@ -258,7 +260,7 @@ export function SavingsGoalsPage({
 
                 {isComplete && (
                   <div className="flex items-center gap-2 pt-3 border-t divider">
-                    <span className="text-emerald-500 text-lg">✓</span>
+                    <AppIcon icon={CheckCircle2} size="md" className="text-emerald-500 dark:text-emerald-400" />
                     <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
                       Goal reached!
                     </p>
@@ -271,7 +273,7 @@ export function SavingsGoalsPage({
       ) : (
         <Card>
           <EmptyState
-            icon="🎯"
+            icon={EMPTY_STATE_ICONS.savings}
             title="No optional goals yet"
             description="Add a vacation, wedding, or purchase goal with a target date. Your emergency fund stays separate above."
           />
@@ -318,8 +320,8 @@ function DepositButton({ onDeposit }: { onDeposit: (amount: number) => void }) {
       <Button size="sm" onClick={handleSubmit}>
         Save
       </Button>
-      <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
-        ✕
+      <Button size="sm" variant="ghost" onClick={() => setOpen(false)} aria-label="Cancel">
+        <AppIcon icon={X} size="sm" />
       </Button>
     </div>
   );

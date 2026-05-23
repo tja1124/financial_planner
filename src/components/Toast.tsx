@@ -1,4 +1,6 @@
+import { X } from 'lucide-react';
 import { Button } from './Button';
+import { AppIcon } from './icons';
 
 interface Props {
   message: string;
@@ -10,7 +12,7 @@ export function Toast({ message, onUndo, onDismiss }: Props) {
   return (
     <div
       role="status"
-      className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 surface-overlay text-primary text-sm font-medium pl-4 pr-2 py-2.5 rounded-xl max-w-[min(100vw-2rem,28rem)]"
+      className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 surface-overlay text-primary text-sm font-medium pl-4 pr-2 py-2.5 rounded-xl max-w-[min(100vw-2rem,28rem)] shadow-[var(--shadow-elevated)]"
     >
       <span className="flex-1 leading-snug text-secondary">{message}</span>
       {onUndo && (
@@ -26,10 +28,10 @@ export function Toast({ message, onUndo, onDismiss }: Props) {
       <button
         type="button"
         onClick={onDismiss}
-        className="p-1.5 text-caption hover:text-primary cursor-pointer shrink-0 rounded-md hover:bg-white/[0.06] transition-colors"
+        className="p-1.5 text-caption hover:text-primary cursor-pointer shrink-0 rounded-md hover:bg-white/[0.06] transition-colors accent-ring"
         aria-label="Dismiss"
       >
-        ✕
+        <AppIcon icon={X} size="sm" />
       </button>
     </div>
   );

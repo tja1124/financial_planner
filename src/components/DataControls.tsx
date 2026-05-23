@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { Button } from './Button';
 import { ConfirmDialog } from './ConfirmDialog';
+import { AppIcon } from './icons';
 
 interface Props {
   lastSaved: string | null;
@@ -40,7 +42,7 @@ export function DataControls({
           aria-haspopup="true"
         >
           Data
-          <span className="text-caption ml-0.5">▾</span>
+          <AppIcon icon={ChevronDown} size="xs" className="ml-0.5 opacity-70" />
         </Button>
 
         {menuOpen && (

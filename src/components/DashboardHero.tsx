@@ -1,5 +1,6 @@
 import { formatCurrency } from '../utils/calculations';
 import { formatPayoffDuration } from '../utils/debtStrategies';
+import { StatusIndicator } from './icons';
 
 interface Props {
   isOnTrack: boolean;
@@ -41,16 +42,12 @@ export function DashboardHero({
       <div className="px-5 py-5 sm:px-6 sm:py-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-stretch sm:gap-6">
           <div className="min-w-0 flex-1">
-            <div
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium tracking-wide border mb-4 ${
-                isOnTrack
-                  ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/[0.08] border-emerald-500/20'
-                  : 'text-rose-700 dark:text-rose-300 bg-rose-500/[0.08] border-rose-500/20'
-              }`}
+            <StatusIndicator
+              tone={isOnTrack ? 'healthy' : 'warning'}
+              className="mb-4"
             >
-              <span aria-hidden>{isOnTrack ? '✓' : '⚠'}</span>
-              <span>{isOnTrack ? 'On track' : 'Needs attention'}</span>
-            </div>
+              {isOnTrack ? 'On track' : 'Needs attention'}
+            </StatusIndicator>
 
             <h1
               className={`text-2xl sm:text-[1.75rem] font-semibold tabular-nums tracking-tight leading-none ${

@@ -4,7 +4,9 @@ import { useSettings } from '../context/SettingsContext';
 import { useMotion } from '../hooks/useMotion';
 import type { CurrencyCode } from '../types';
 import { CURRENCY_OPTIONS } from '../utils/settings';
+import { X } from 'lucide-react';
 import { Button } from './Button';
+import { AppIcon } from './icons';
 
 interface Props {
   open: boolean;
@@ -52,7 +54,7 @@ export function SettingsModal({ open, onClose, onResetOnboarding }: Props) {
                   className="text-muted hover:text-primary p-2 -m-2 cursor-pointer rounded-lg accent-ring"
                   aria-label="Close"
                 >
-                  ✕
+                  <AppIcon icon={X} size="md" />
                 </button>
               </div>
 

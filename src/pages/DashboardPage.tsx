@@ -16,6 +16,8 @@ import { HealthScoreCard } from '../components/HealthScoreCard';
 import { AnimatedCard } from '../components/motion/AnimatedCard';
 import { FadeIn } from '../components/motion/FadeIn';
 import { PageTransition } from '../components/motion/PageTransition';
+import { AppIcon, EMPTY_STATE_ICONS } from '../components/icons';
+import { ArrowRight } from 'lucide-react';
 
 const DashboardCharts = lazy(() =>
   import('./DashboardCharts').then((m) => ({ default: m.DashboardCharts })),
@@ -69,7 +71,7 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
       <PageTransition>
         <AnimatedCard>
           <EmptyState
-            icon="📊"
+            icon={EMPTY_STATE_ICONS.dashboard}
             title="Welcome to FinancePlanner"
             description="Load demo data to explore features, or add your income and expenses to build your personal plan."
             action={
@@ -79,7 +81,10 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
                   onClick={() => onNavigate('income')}
                   className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                 >
-                  Start with Income →
+                  <>
+                    Start with Income
+                    <AppIcon icon={ArrowRight} size="xs" className="inline ml-1 -mt-0.5" />
+                  </>
                 </button>
               )
             }

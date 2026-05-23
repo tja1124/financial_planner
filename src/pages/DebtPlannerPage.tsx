@@ -17,6 +17,7 @@ import { Card, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { PageHeader } from '../components/PageHeader';
+import { EMPTY_STATE_ICONS } from '../components/icons';
 import { EmptyState } from '../components/EmptyState';
 import { FormAlerts } from '../components/FormAlerts';
 import { ChartContainer } from '../components/ChartContainer';
@@ -470,7 +471,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
       {debts.length === 0 && (
         <Card>
           <EmptyState
-            icon="🏦"
+            icon={EMPTY_STATE_ICONS.debt}
             title="No debts tracked"
             description="Add your debts to compare snowball, avalanche, and custom payoff strategies."
           />
