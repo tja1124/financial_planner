@@ -1,94 +1,236 @@
 import type { AppData, Recommendation, FinancialSummary } from '../types';
+import { formatCurrency } from './calculations';
+import { simulateDebtStrategy } from './debtStrategies';
 import { computeEmergencyFundTarget } from './scenarios';
+
+const PRIORITY_ORDER: Record<Recommendation['priority'], number> = {
+  critical: 0,
+  warning: 1,
+  opportunity: 2,
+  healthy: 3,
+};
+
+function sortRecs(recs: Recommendation[]): Recommendation[] {
+  return recs.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
+}
 
 export function getRecommendations(
   data: AppData,
   summary: FinancialSummary,
 ): Recommendation[] {
   const recs: Recommendation[] = [];
+  const income = summary.totalMonthlyIncome;
+  const expenses = summary.totalMonthlyExpenses;
+  const dti = income > 0 ? summary.totalMonthlyDebtPayments / income : 0;
+
+  const efGoal = data.savingsGoals.find((g) => /emergency/i.test(g.name));
+  const efTarget = efGoal?.targetAmount ?? computeEmergencyFundTarget(data.expenses);
+  const efCurrent = efGoal?.currentAmount ?? 0;
+  const efMonths = expenses > 0 ? efCurrent / expenses : 0;
+
+  const snowball = simulateDebtStrategy(data.debts, 'snowball');
+  const avalanche = simulateDebtStrategy(data.debts, 'avalanche');
+  const custom = simulateDebtStrategy(data.debts, 'custom');
+  const bestInterest = Math.min(snowball.totalInterest, avalanche.totalInterest, custom.totalInterest);
+  const inefficientCustom =
+    data.debts.length >= 2 &&
+    custom.totalInterest > bestInterest + 200 &&
+    custom.payoffMonths >= Math.min(snowball.payoffMonths, avalanche.payoffMonths);
 
   if (data.income.length === 0) {
     recs.push({
       id: 'add-income',
-      priority: 'high',
+      priority: 'critical',
       title: 'Add your income sources',
-      description: 'Start by entering salary and any side income so projections are accurate.',
+      description: 'Start with salary and side income so projections and health score are accurate.',
       actionPage: 'income',
+      tone: 'caution',
     });
   }
 
   if (data.expenses.length === 0) {
     recs.push({
       id: 'add-expenses',
-      priority: 'high',
+      priority: 'critical',
       title: 'Track monthly expenses',
       description: 'List fixed and variable bills to see where your money goes.',
       actionPage: 'expenses',
+      tone: 'caution',
     });
   }
 
   if (summary.monthlyLeftover < 0) {
     recs.push({
       id: 'over-budget',
-      priority: 'high',
+      priority: 'critical',
       title: 'You are over budget',
-      description: `Spending exceeds income by ${Math.abs(summary.monthlyLeftover).toFixed(0)} per month. Review expenses or increase debt payoff flexibility.`,
+      description: `Spending exceeds income by ${formatCurrency(Math.abs(summary.monthlyLeftover))} per month. Trim expenses or adjust debt/savings targets.`,
       actionPage: 'expenses',
+      tone: 'caution',
     });
+  }
+
+  if (income > 0 && dti >= 0.43) {
+    recs.push({
+      id: 'high-dti',
+      priority: 'critical',
+      title: 'High debt-to-income ratio',
+      description: `Debt payments are ${(dti * 100).toFixed(0)}% of income. Lenders often prefer under 36%. Focus on payoff or income growth.`,
+      actionPage: 'debt',
+      tone: 'caution',
+    });
+  } else if (income > 0 && dti >= 0.36) {
+    recs.push({
+      id: 'elevated-dti',
+      priority: 'warning',
+      title: 'Debt load is elevated',
+      description: `Debt payments use ${(dti * 100).toFixed(0)}% of income. Consider avalanche payoff or extra payments.`,
+      actionPage: 'debt',
+      tone: 'caution',
+    });
+  }
+
+  if (expenses > 0 && efMonths < 1 && efTarget > 0) {
+    recs.push({
+      id: 'emergency-critical',
+      priority: 'critical',
+      title: 'Emergency fund runway is thin',
+      description: `Less than one month of expenses saved. Target ${formatCurrency(efTarget)} (about 3 months).`,
+      actionPage: 'savings',
+      tone: 'caution',
+    });
+  } else if (expenses > 0 && efMonths < 3 && efTarget > 0) {
+    recs.push({
+      id: 'emergency-fund',
+      priority: 'warning',
+      title: 'Build your emergency fund',
+      description: `About ${efMonths.toFixed(1)} months of expenses saved. Aim for ${formatCurrency(efTarget)}.`,
+      actionPage: 'savings',
+      tone: 'caution',
+    });
+  }
+
+  if (expenses > 0) {
+    const byCat: Record<string, number> = {};
+    for (const e of data.expenses) {
+      byCat[e.category] = (byCat[e.category] ?? 0) + e.amount;
+    }
+    const top = Object.entries(byCat).sort((a, b) => b[1] - a[1])[0];
+    if (top && income > 0 && top[1] / income > 0.35) {
+      recs.push({
+        id: 'overspend-category',
+        priority: 'warning',
+        title: `${top[0]} may be overspending`,
+        description: `${top[0]} is ${formatCurrency(top[1])}/mo (${((top[1] / income) * 100).toFixed(0)}% of income). Review for cuts or rebalancing.`,
+        actionPage: 'expenses',
+        tone: 'caution',
+      });
+    }
   }
 
   const highInterestDebt = data.debts.find((d) => d.interestRate >= 15 && d.balance > 0);
   if (highInterestDebt && highInterestDebt.extraPayment < 50) {
     recs.push({
       id: 'high-interest',
-      priority: 'high',
-      title: `Attack ${highInterestDebt.name} first`,
-      description: `At ${highInterestDebt.interestRate}% APR, extra payments here save the most. Try the avalanche strategy in Debt Planner.`,
+      priority: 'warning',
+      title: `Prioritize ${highInterestDebt.name}`,
+      description: `At ${highInterestDebt.interestRate}% APR, extra payments here save the most. Try avalanche in Debt Planner.`,
       actionPage: 'debt',
+      tone: 'caution',
     });
   }
 
-  const efGoal = data.savingsGoals.find((g) => /emergency/i.test(g.name));
-  const efTarget = efGoal?.targetAmount ?? computeEmergencyFundTarget(data.expenses);
-  const efCurrent = efGoal?.currentAmount ?? 0;
-  if (efCurrent < efTarget * 0.5 && data.expenses.length > 0) {
+  if (inefficientCustom) {
     recs.push({
-      id: 'emergency-fund',
-      priority: 'medium',
-      title: 'Build your emergency fund',
-      description: `Aim for ${efTarget.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} (3 months of expenses). You're at ${Math.round((efCurrent / efTarget) * 100)}%.`,
-      actionPage: 'savings',
+      id: 'inefficient-debt',
+      priority: 'opportunity',
+      title: 'A smarter debt strategy may exist',
+      description: `Snowball or avalanche could save about ${formatCurrency(custom.totalInterest - bestInterest)} in interest vs your custom split.`,
+      actionPage: 'debt',
+      tone: 'neutral',
     });
   }
 
-  if (data.debts.length >= 2) {
+  if (
+    income > 0 &&
+    summary.totalMonthlySavingsContributions / income >= 0.15 &&
+    summary.monthlyLeftover > 0
+  ) {
     recs.push({
-      id: 'compare-scenarios',
-      priority: 'medium',
-      title: 'Compare payoff scenarios',
-      description: 'See how aggressive debt payoff or lower spending changes your timeline.',
-      actionPage: 'scenarios',
+      id: 'strong-savings',
+      priority: 'healthy',
+      title: 'Strong savings momentum',
+      description: `You're allocating ${((summary.totalMonthlySavingsContributions / income) * 100).toFixed(0)}% of income to savings while staying cash-flow positive.`,
+      tone: 'positive',
     });
   }
 
-  if (summary.safeWeeklySpending > 0 && summary.monthlyLeftover > 500) {
+  if (summary.monthlyLeftover > 500 && summary.monthlyLeftover > 0 && dti < 0.28) {
+    recs.push({
+      id: 'healthy-buffer',
+      priority: 'healthy',
+      title: 'Healthy monthly buffer',
+      description: `${formatCurrency(summary.monthlyLeftover)} leftover each month gives flexibility for goals or extra debt payoff.`,
+      tone: 'positive',
+    });
+  }
+
+  if (data.debts.length > 0 && custom.payoffMonths > 0 && custom.payoffMonths <= 24) {
+    recs.push({
+      id: 'debt-progress',
+      priority: 'healthy',
+      title: 'Debt payoff on track',
+      description: 'Current plan projects debt-free within two years. Keep minimums and extras consistent.',
+      actionPage: 'debt',
+      tone: 'positive',
+    });
+  }
+
+  if (summary.safeWeeklySpending > 0 && summary.monthlyLeftover > 300) {
     recs.push({
       id: 'weekly-budget',
-      priority: 'low',
-      title: `Safe to spend ${summary.safeWeeklySpending.toFixed(0)}/week`,
-      description: 'This is discretionary cash after bills, debt, and savings — use it guilt-free.',
+      priority: 'opportunity',
+      title: `Safe to spend ${formatCurrency(summary.safeWeeklySpending)}/week`,
+      description: 'Discretionary cash after bills, debt, and savings — use guilt-free.',
+      tone: 'positive',
     });
   }
 
   if (data.debts.some((d) => d.extraPayment === 0) && summary.monthlyLeftover > 200) {
     recs.push({
       id: 'extra-debt',
-      priority: 'medium',
-      title: 'Allocate extra to debt',
-      description: 'You have room in your budget. Even $50/mo extra cuts interest and payoff time.',
+      priority: 'opportunity',
+      title: 'Room to accelerate debt',
+      description: 'Even $50/mo extra cuts interest and shortens payoff time.',
       actionPage: 'debt',
+      tone: 'neutral',
     });
   }
 
-  return recs.slice(0, 5);
+  if (data.debts.length >= 2) {
+    recs.push({
+      id: 'compare-scenarios',
+      priority: 'opportunity',
+      title: 'Compare payoff scenarios',
+      description: 'See how aggressive debt payoff or lower spending changes your timeline.',
+      actionPage: 'scenarios',
+      tone: 'neutral',
+    });
+  }
+
+  if (income > 0 && expenses > 0 && summary.monthlyLeftover > 0) {
+    const savingsRate = summary.totalMonthlySavingsContributions / income;
+    if (savingsRate < 0.05 && summary.monthlyLeftover > 150) {
+      recs.push({
+        id: 'improve-trend',
+        priority: 'opportunity',
+        title: 'Trending positive — capture more savings',
+        description: 'You have monthly surplus but low planned savings. Redirect a portion toward goals.',
+        actionPage: 'savings',
+        tone: 'neutral',
+      });
+    }
+  }
+
+  return sortRecs(recs).slice(0, 6);
 }

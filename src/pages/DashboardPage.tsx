@@ -1,34 +1,24 @@
-import { useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import type { AppData, FinancialSummary, Page } from '../types';
 import { formatCurrency } from '../utils/calculations';
 import { projectCashflow } from '../utils/cashflow';
 import { getRecommendations } from '../utils/recommendations';
+import { computeHealthScore } from '../utils/healthScore';
 import { formatPayoffDuration } from '../utils/debtStrategies';
 import { simulateDebtStrategy } from '../utils/debtStrategies';
 import { StatCard } from '../components/StatCard';
-import { Card, CardHeader } from '../components/Card';
+import { CardHeader } from '../components/Card';
 import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { RecommendationCard } from '../components/RecommendationCard';
-import { ChartContainer } from '../components/ChartContainer';
-import { ChartTooltip } from '../components/charts/ChartTooltip';
-import { PieChartTooltip } from '../components/charts/PieChartTooltip';
-import { useChartTheme } from '../hooks/useChartTheme';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  BarChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-  Legend,
-  ComposedChart,
-} from 'recharts';
+import { HealthScoreCard } from '../components/HealthScoreCard';
+import { AnimatedCard } from '../components/motion/AnimatedCard';
+import { FadeIn } from '../components/motion/FadeIn';
+import { PageTransition } from '../components/motion/PageTransition';
+
+const DashboardCharts = lazy(() =>
+  import('./DashboardCharts').then((m) => ({ default: m.DashboardCharts })),
+);
 
 interface Props {
   data: AppData;
@@ -36,8 +26,16 @@ interface Props {
   onNavigate?: (page: Page) => void;
 }
 
+function ChartSkeleton() {
+  return (
+    <div className="surface-card p-6 animate-pulse">
+      <div className="h-4 w-40 bg-zinc-200 dark:bg-zinc-800 rounded mb-4" />
+      <div className="h-[220px] sm:h-[260px] chart-well rounded-xl bg-zinc-100 dark:bg-zinc-900/50" />
+    </div>
+  );
+}
+
 export function DashboardPage({ data, summary, onNavigate }: Props) {
-  const chart = useChartTheme();
   const {
     totalMonthlyIncome,
     totalMonthlyExpenses,
@@ -54,38 +52,20 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
     () => getRecommendations(data, summary),
     [data, summary],
   );
+  const health = useMemo(() => computeHealthScore(data, summary), [data, summary]);
   const debtFreeMonths = useMemo(
     () => simulateDebtStrategy(data.debts, 'custom').payoffMonths,
     [data.debts],
   );
 
-  const categoryData = data.expenses.reduce<Record<string, number>>((acc, e) => {
-    acc[e.category] = (acc[e.category] ?? 0) + e.amount;
-    return acc;
-  }, {});
-  const expenseTotal = Object.values(categoryData).reduce((s, v) => s + v, 0);
-  const expensePieData = Object.entries(categoryData).map(([name, value]) => ({
-    name,
-    value,
-    total: expenseTotal,
-  }));
-
-  const budgetBarData = [
-    { name: 'Income', amount: totalMonthlyIncome, fill: chart.series.income },
-    { name: 'Expenses', amount: totalMonthlyExpenses, fill: chart.series.expenses },
-    { name: 'Debt', amount: totalMonthlyDebtPayments, fill: chart.series.debt },
-    { name: 'Savings', amount: totalMonthlySavingsContributions, fill: chart.series.savings },
-    { name: 'Leftover', amount: Math.max(0, monthlyLeftover), fill: chart.series.leftover },
-  ].filter((d) => d.amount > 0);
-
   if (isEmpty) {
     return (
-      <div>
+      <PageTransition>
         <PageHeader
           title="Dashboard"
           subtitle="Your complete financial picture — budget, forecast, and next steps."
         />
-        <Card>
+        <AnimatedCard>
           <EmptyState
             icon="📊"
             title="Welcome to FinancePlanner"
@@ -95,203 +75,151 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
                 <button
                   type="button"
                   onClick={() => onNavigate('income')}
-                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                  className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                 >
                   Start with Income →
                 </button>
               )
             }
           />
-        </Card>
-      </div>
+        </AnimatedCard>
+      </PageTransition>
     );
   }
 
+  const savingsRate =
+    totalMonthlyIncome > 0
+      ? Math.round((totalMonthlySavingsContributions / totalMonthlyIncome) * 100)
+      : 0;
+
   return (
-    <div className="page-stack">
-      <PageHeader
-        title="Dashboard"
-        subtitle="Your complete financial picture — budget, 12-month forecast, and recommended actions."
-      />
+    <PageTransition>
+      <div className="page-stack-tight">
+        <FadeIn>
+          <section className="dashboard-hero surface-card p-5 sm:p-7">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-2">
+                  Overview
+                </p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight">
+                  {monthlyLeftover >= 0 ? 'On track' : 'Needs attention'}
+                </h1>
+                <p className="text-sm text-secondary mt-2 max-w-md leading-relaxed">
+                  {monthlyLeftover >= 0
+                    ? `${formatCurrency(monthlyLeftover)} left each month after obligations.`
+                    : `${formatCurrency(Math.abs(monthlyLeftover))} over budget — review expenses and debt.`}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                <HeroPill label="Weekly safe" value={formatCurrency(safeWeeklySpending)} />
+                <HeroPill label="Savings rate" value={`${savingsRate}%`} />
+                {debtFreeMonths > 0 && (
+                  <HeroPill label="Debt-free" value={formatPayoffDuration(debtFreeMonths)} />
+                )}
+              </div>
+            </div>
+          </section>
+        </FadeIn>
 
-      {recommendations.length > 0 && (
-        <Card>
-          <CardHeader title="Next best actions" subtitle="Personalized based on your plan" />
-          <RecommendationCard recommendations={recommendations} onNavigate={onNavigate} />
-        </Card>
-      )}
+        <HealthScoreCard health={health} />
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        <StatCard
-          label="Monthly Income"
-          value={formatCurrency(totalMonthlyIncome)}
-          color="green"
-        />
-        <StatCard
-          label="Monthly Expenses"
-          value={formatCurrency(totalMonthlyExpenses)}
-          color="red"
-        />
-        <StatCard
-          label="Monthly Leftover"
-          value={formatCurrency(monthlyLeftover)}
-          subtext={monthlyLeftover < 0 ? 'Over budget' : 'After all obligations'}
-          color={monthlyLeftover >= 0 ? 'blue' : 'red'}
-          featured
-        />
-        <StatCard
-          label="Safe Weekly Spend"
-          value={formatCurrency(safeWeeklySpending)}
-          subtext="Discretionary · leftover ÷ 4.33"
-          color="green"
-        />
-        <StatCard
-          label="Debt Payments"
-          value={formatCurrency(totalMonthlyDebtPayments)}
-          subtext={debtFreeMonths > 0 ? `Debt-free in ${formatPayoffDuration(debtFreeMonths)}` : undefined}
-          color="amber"
-        />
-        <StatCard
-          label="Savings Rate"
-          value={formatCurrency(totalMonthlySavingsContributions)}
-          subtext="Planned monthly contributions"
-          color="indigo"
-        />
-      </div>
-
-      <Card>
-        <CardHeader
-          title="12-Month Cashflow Forecast"
-          subtitle="Projected income, obligations, and cumulative cash position"
-        />
-        <ChartContainer height={300}>
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={cashflow} margin={{ top: 12, right: 8, left: -4, bottom: 4 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
-            <XAxis dataKey="label" tick={{ fontSize: 10, fill: chart.tick }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
-            <Tooltip
-              content={<ChartTooltip formatLabel={(l) => String(l)} />}
-              cursor={{ fill: chart.cursor }}
-            />
-            <Legend wrapperStyle={chart.legendStyle} iconType="circle" iconSize={8} />
-            <Bar dataKey="income" fill={chart.series.income} name="Income" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="expenses" fill={chart.series.expenses} name="Expenses" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="debtPayments" fill={chart.series.debt} name="Debt" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="savings" fill={chart.series.savings} name="Savings" radius={[4, 4, 0, 0]} />
-            <Line
-              type="monotone"
-              dataKey="cumulativeCash"
-              stroke={chart.series.cumulative}
-              strokeWidth={2.5}
-              dot={false}
-              name="Cumulative cash"
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-        </ChartContainer>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t divider">
-          <ForecastStat label="Year-end cash" value={cashflow[cashflow.length - 1]?.cumulativeCash ?? 0} />
-          <ForecastStat
-            label="Avg monthly leftover"
-            value={Math.round(cashflow.reduce((s, m) => s + m.leftover, 0) / cashflow.length)}
-          />
-          <ForecastStat
-            label="Lowest month"
-            value={Math.min(...cashflow.map((m) => m.leftover))}
-          />
-          <ForecastStat
-            label="Highest month"
-            value={Math.max(...cashflow.map((m) => m.leftover))}
-          />
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {budgetBarData.length > 0 && (
-          <Card>
-            <CardHeader title="Monthly Budget" />
-            <ChartContainer height={240}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={budgetBarData} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: chart.tick }} tickFormatter={(v) => `$${(Number(v) / 1000).toFixed(0)}k`} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTooltip />} cursor={{ fill: chart.cursor }} />
-                <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
-                  {budgetBarData.map((entry, i) => (
-                    <Cell key={i} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            </ChartContainer>
-          </Card>
+        {recommendations.length > 0 && (
+          <AnimatedCard delay={0.04} hoverLift>
+            <CardHeader title="Insights" subtitle="Prioritized for your plan" />
+            <RecommendationCard recommendations={recommendations} onNavigate={onNavigate} />
+          </AnimatedCard>
         )}
 
-        {expensePieData.length > 0 && (
-          <Card>
-            <CardHeader title="Expenses by Category" />
-            <ChartContainer height={240}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={expensePieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={90}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {expensePieData.map((_, i) => (
-                    <Cell key={i} fill={chart.pieColor(i)} />
-                  ))}
-                </Pie>
-                <Tooltip content={<PieChartTooltip />} />
-                <Legend wrapperStyle={chart.legendStyle} iconType="circle" iconSize={8} />
-              </PieChart>
-            </ResponsiveContainer>
-            </ChartContainer>
-          </Card>
+        <FadeIn delay={0.06}>
+          <section>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 px-0.5">
+              Key metrics
+            </h2>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+              <StatCard label="Income" value={formatCurrency(totalMonthlyIncome)} color="green" />
+              <StatCard label="Expenses" value={formatCurrency(totalMonthlyExpenses)} color="red" />
+              <StatCard
+                label="Leftover"
+                value={formatCurrency(monthlyLeftover)}
+                subtext={monthlyLeftover < 0 ? 'Over budget' : 'After obligations'}
+                color={monthlyLeftover >= 0 ? 'blue' : 'red'}
+                featured
+              />
+              <StatCard
+                label="Safe weekly"
+                value={formatCurrency(safeWeeklySpending)}
+                subtext="Discretionary"
+                color="green"
+              />
+              <StatCard
+                label="Debt"
+                value={formatCurrency(totalMonthlyDebtPayments)}
+                subtext={
+                  debtFreeMonths > 0 ? `Free in ${formatPayoffDuration(debtFreeMonths)}` : undefined
+                }
+                color="amber"
+              />
+              <StatCard
+                label="Savings"
+                value={formatCurrency(totalMonthlySavingsContributions)}
+                subtext="Planned / mo"
+                color="indigo"
+              />
+            </div>
+          </section>
+        </FadeIn>
+
+        <Suspense
+          fallback={
+            <div className="space-y-4 sm:space-y-5">
+              <ChartSkeleton />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <ChartSkeleton />
+                <ChartSkeleton />
+              </div>
+            </div>
+          }
+        >
+          <DashboardCharts data={data} summary={summary} cashflow={cashflow} />
+        </Suspense>
+
+        {data.savingsGoals.length > 0 && (
+          <AnimatedCard delay={0.12}>
+            <CardHeader title="Savings Goals" />
+            <div className="space-y-4">
+              {data.savingsGoals.map((goal) => {
+                const pct = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
+                return (
+                  <div key={goal.id}>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="font-medium text-primary">{goal.name}</span>
+                      <span className="text-secondary tabular-nums">
+                        {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-zinc-100 dark:bg-zinc-800/80 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${pct >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </AnimatedCard>
         )}
       </div>
-
-      {data.savingsGoals.length > 0 && (
-        <Card>
-          <CardHeader title="Savings Goals" />
-          <div className="space-y-4">
-            {data.savingsGoals.map((goal) => {
-              const pct = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
-              return (
-                <div key={goal.id}>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="font-medium text-primary">{goal.name}</span>
-                    <span className="text-secondary tabular-nums">
-                      {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
-                    </span>
-                  </div>
-                  <div className="h-2 bg-zinc-100 dark:bg-zinc-800/80 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      )}
-    </div>
+    </PageTransition>
   );
 }
 
-function ForecastStat({ label, value }: { label: string; value: number }) {
+function HeroPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="surface-muted p-3.5 text-center">
+    <div className="surface-muted px-3.5 py-2.5 rounded-xl min-w-[7rem]">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="text-base font-bold text-primary mt-1 tabular-nums">{formatCurrency(value)}</p>
+      <p className="text-sm font-bold text-primary tabular-nums mt-0.5">{value}</p>
     </div>
   );
 }

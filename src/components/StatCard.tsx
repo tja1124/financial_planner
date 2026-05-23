@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 interface StatCardProps {
   label: string;
   value: string;
@@ -48,7 +50,13 @@ const colorMap: Record<
   },
 };
 
-export function StatCard({ label, value, subtext, color = 'slate', featured }: StatCardProps) {
+export const StatCard = memo(function StatCard({
+  label,
+  value,
+  subtext,
+  color = 'slate',
+  featured,
+}: StatCardProps) {
   const c = colorMap[color];
   return (
     <div
@@ -63,4 +71,4 @@ export function StatCard({ label, value, subtext, color = 'slate', featured }: S
       {subtext && <p className={`text-xs mt-2 ${c.sub}`}>{subtext}</p>}
     </div>
   );
-}
+});

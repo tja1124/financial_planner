@@ -103,16 +103,22 @@ export function buildExportPayload(data: AppData): ExportPayload {
   };
 }
 
-export function downloadJsonExport(data: AppData): void {
+export function downloadJsonExport(
+  data: AppData,
+  options?: { includeTimestamp?: boolean },
+): void {
   const payload = buildExportPayload(data);
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: 'application/json',
   });
   const url = URL.createObjectURL(blob);
   const date = new Date().toISOString().split('T')[0];
+  const stamp = options?.includeTimestamp
+    ? `-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}`
+    : '';
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `finance-planner-backup-${date}.json`;
+  anchor.download = `finance-planner-backup-${date}${stamp}.json`;
   anchor.click();
   URL.revokeObjectURL(url);
 }

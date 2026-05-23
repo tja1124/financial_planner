@@ -103,12 +103,40 @@ export interface CashflowMonth {
   cumulativeCash: number;
 }
 
+export type InsightPriority = 'critical' | 'warning' | 'healthy' | 'opportunity';
+
 export interface Recommendation {
   id: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: InsightPriority;
   title: string;
   description: string;
   actionPage?: 'income' | 'expenses' | 'debt' | 'savings' | 'scenarios';
+  /** Positive reinforcement vs caution */
+  tone?: 'positive' | 'neutral' | 'caution';
+}
+
+export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'CAD' | 'AUD';
+
+export interface AppSettings {
+  currency: CurrencyCode;
+  weekStartsOn: 0 | 1;
+  compactMode: boolean;
+  reducedMotion: boolean;
+  exportIncludeTimestamp: boolean;
+}
+
+export interface HealthScoreFactor {
+  id: string;
+  label: string;
+  score: number;
+  weight: number;
+  description: string;
+}
+
+export interface HealthScoreResult {
+  overall: number;
+  grade: 'critical' | 'warning' | 'fair' | 'good' | 'excellent';
+  factors: HealthScoreFactor[];
 }
 
 export type Page =

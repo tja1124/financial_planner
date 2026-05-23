@@ -75,10 +75,16 @@ export function computeSummary(
   };
 }
 
+let currencyCode = 'USD';
+
+export function setFormatCurrencyOptions(opts: { currency: string }): void {
+  currencyCode = opts.currency;
+}
+
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: currencyCode,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);

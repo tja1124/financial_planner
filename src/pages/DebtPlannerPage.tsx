@@ -323,7 +323,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                     </p>
                     <div className="space-y-1">
                       <p className="text-xs text-slate-500">Payoff</p>
-                      <p className="text-lg font-bold text-slate-800">
+                      <p className="text-lg font-bold text-primary">
                         {formatPayoffDuration(result.payoffMonths)}
                       </p>
                       <p className="text-xs text-slate-500 mt-2">Total interest</p>

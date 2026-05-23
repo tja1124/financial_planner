@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Page } from '../types';
 import { DataControls } from './DataControls';
 import { ThemeToggle } from './ThemeToggle';
+import { SettingsModal } from './SettingsModal';
+import { useMotion } from '../hooks/useMotion';
 
 interface NavItem {
   id: Page;
@@ -27,6 +30,7 @@ interface Props {
   onExport: () => void;
   onImport: (file: File) => void;
   onReset: () => void;
+  onResetOnboarding: () => void;
   children: React.ReactNode;
 }
 
@@ -38,8 +42,12 @@ export function Layout({
   onExport,
   onImport,
   onReset,
+  onResetOnboarding,
   children,
 }: Props) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const motionProps = useMotion();
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="surface-nav border-b sticky top-0 z-30">
@@ -48,7 +56,7 @@ export function Layout({
             <button
               type="button"
               onClick={() => onNavigate('dashboard')}
-              className="flex items-center gap-2.5 shrink-0 cursor-pointer group accent-ring rounded-lg -ml-1 pl-1"
+              className="flex items-center gap-2.5 shrink-0 cursor-pointer group accent-ring rounded-lg -ml-1 pl-1 min-h-[44px]"
             >
               <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold shadow-sm group-hover:bg-indigo-500 dark:shadow-indigo-500/25 transition-colors">
                 FP
@@ -70,7 +78,17 @@ export function Layout({
               ))}
             </nav>
 
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-slate-100/80 dark:hover:bg-white/[0.05] transition-colors cursor-pointer accent-ring"
+                aria-label="Settings"
+              >
+                <span className="text-lg" aria-hidden>
+                  ⚙
+                </span>
+              </button>
               <ThemeToggle />
               <DataControls
                 lastSaved={lastSaved}
@@ -82,7 +100,7 @@ export function Layout({
             </div>
           </div>
 
-          <nav className="hidden lg:flex xl:hidden items-center gap-1 pb-2.5 overflow-x-auto scrollbar-none">
+          <nav className="hidden lg:flex xl:hidden items-center gap-1 pb-2.5 overflow-x-auto scrollbar-none momentum-scroll">
             {NAV_ITEMS.map((item) => (
               <NavButton
                 key={item.id}
@@ -96,8 +114,12 @@ export function Layout({
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-7 sm:py-10 pb-24 lg:pb-12">
-        {children}
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-9 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10">
+        <AnimatePresence mode="wait">
+          <motion.div key={currentPage} {...motionProps.page}>
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {lastSaved && (
@@ -107,7 +129,7 @@ export function Layout({
       )}
 
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 surface-nav border-t z-30 safe-area-pb shadow-[0_-8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_40px_rgba(0,0,0,0.5)]"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--border-default)] bg-[var(--surface-nav)] backdrop-blur-2xl backdrop-saturate-150 safe-area-pb shadow-[0_-4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_32px_rgba(0,0,0,0.45)]"
         aria-label="Main navigation"
       >
         <div className="flex max-w-lg mx-auto">
@@ -122,6 +144,12 @@ export function Layout({
           ))}
         </div>
       </nav>
+
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onResetOnboarding={onResetOnboarding}
+      />
     </div>
   );
 }
@@ -145,14 +173,14 @@ function NavButton({
         type="button"
         onClick={onClick}
         aria-current={active ? 'page' : undefined}
-        className={`flex-1 flex flex-col items-center py-2.5 pt-3 gap-0.5 min-w-0 cursor-pointer relative transition-colors ${
+        className={`flex-1 flex flex-col items-center justify-center min-h-[56px] py-2 gap-0.5 min-w-0 cursor-pointer relative transition-colors touch-manipulation ${
           active ? 'text-indigo-600 dark:text-indigo-300' : 'text-muted'
         }`}
       >
         {active && (
-          <span className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full shadow-[0_0_8px_rgba(129,140,248,0.5)]" />
+          <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
         )}
-        <span className="text-lg leading-none">{item.icon}</span>
+        <span className="text-xl leading-none">{item.icon}</span>
         <span className="text-[10px] font-semibold truncate w-full text-center px-0.5">
           {item.shortLabel ?? item.label.split(' ')[0]}
         </span>
@@ -165,7 +193,7 @@ function NavButton({
       type="button"
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
-      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer whitespace-nowrap accent-ring ${
+      className={`px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all cursor-pointer whitespace-nowrap accent-ring ${
         active
           ? 'nav-active'
           : 'text-secondary hover:text-primary hover:bg-slate-100/80 dark:hover:bg-white/[0.05]'
