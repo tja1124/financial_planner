@@ -20,6 +20,11 @@ import { EmptyState } from '../components/EmptyState';
 import { EmergencyFundCard } from '../components/EmergencyFundCard';
 import { SavingsContributionControls } from '../components/SavingsContributionControls';
 import { CollapsibleSection } from '../components/CollapsibleSection';
+import {
+  CrudPageLayout,
+  crudFormCardClass,
+  crudListItemClass,
+} from '../components/CrudPageLayout';
 import { useAppActions } from '../context/AppActionsContext';
 import { EMPTY_STATE_ICONS } from '../components/icons';
 import { CheckCircle2 } from 'lucide-react';
@@ -132,6 +137,12 @@ export function SavingsGoalsPage({
     onChange(savingsGoals.map((g) => (g.id === id ? { ...g, ...patch } : g)));
   }
 
+  function handleCancel() {
+    setEditingId(null);
+    setForm(emptyGoal());
+    setValidation(emptyValidation());
+  }
+
   return (
     <div className="page-stack">
       <PageHeader
@@ -153,10 +164,13 @@ export function SavingsGoalsPage({
           Savings goals
         </h2>
 
-        <Card>
-          <CardHeader title={editingId ? 'Edit Goal' : 'Add Savings Goal'} />
+        <CrudPageLayout
+          editingActive={!!editingId}
+          form={
+        <Card className={crudFormCardClass(!!editingId)}>
+          <CardHeader title={editingId ? 'Edit Savings Goal' : 'Add Savings Goal'} />
           <FormAlerts validation={validation} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
             <Input
               label="Goal name"
               placeholder="e.g. Vacation, Home down payment"
@@ -213,25 +227,19 @@ export function SavingsGoalsPage({
             Monthly contribution is your planned recurring amount. Use one-time deposits on each goal
             card to add money now.
           </p>
-          <div className="flex flex-col sm:flex-row gap-2 mt-5">
+          <div className="flex flex-col gap-2 mt-4">
             <Button onClick={handleAdd}>{editingId ? 'Save Changes' : '+ Add Goal'}</Button>
             {editingId && (
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setEditingId(null);
-                  setForm(emptyGoal());
-                  setValidation(emptyValidation());
-                }}
-              >
-                Cancel
+              <Button variant="secondary" onClick={handleCancel}>
+                Cancel editing
               </Button>
             )}
           </div>
         </Card>
-
-      {savingsGoals.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          }
+          list={
+        savingsGoals.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {savingsGoals.map((goal) => {
             const progress =
               goal.targetAmount > 0
@@ -246,8 +254,11 @@ export function SavingsGoalsPage({
               { month: 'short', year: 'numeric' },
             );
 
+            const isActive = editingId === goal.id;
+
             return (
-              <Card key={goal.id} className="!p-4 sm:!p-5">
+              <div key={goal.id} className={crudListItemClass(isActive, 'min-w-0')}>
+              <Card className="!p-4 sm:!p-5">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-primary truncate">{goal.name}</h3>
@@ -321,6 +332,7 @@ export function SavingsGoalsPage({
                   </CollapsibleSection>
                 )}
               </Card>
+              </div>
             );
           })}
         </div>
@@ -332,7 +344,9 @@ export function SavingsGoalsPage({
             description="Add a vacation, major purchase, or other dated goal. Your emergency fund stays separate above."
           />
         </Card>
-      )}
+      )
+          }
+        />
       </div>
     </div>
   );
