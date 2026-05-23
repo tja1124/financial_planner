@@ -5,7 +5,9 @@ import { projectCashflow } from '../utils/cashflow';
 import { Card, CardHeader } from '../components/Card';
 import { ChartContainer } from '../components/ChartContainer';
 import { ChartTooltip } from '../components/charts/ChartTooltip';
+import { BudgetBarTooltip } from '../components/charts/BudgetBarTooltip';
 import { PieChartTooltip } from '../components/charts/PieChartTooltip';
+import { buildBudgetBarData } from '../utils/budgetBarBreakdown';
 import { FadeIn } from '../components/motion/FadeIn';
 import { useChartTheme } from '../hooks/useChartTheme';
 import {
@@ -47,13 +49,6 @@ export const DashboardCharts = memo(function DashboardCharts({
   cashflow,
 }: Props) {
   const chart = useChartTheme();
-  const {
-    totalMonthlyIncome,
-    totalMonthlyExpenses,
-    totalMonthlyDebtPayments,
-    totalMonthlySavingsContributions,
-    monthlyLeftover,
-  } = summary;
 
   const categoryData = data.expenses.reduce<Record<string, number>>((acc, e) => {
     acc[e.category] = (acc[e.category] ?? 0) + e.amount;
@@ -66,13 +61,13 @@ export const DashboardCharts = memo(function DashboardCharts({
     total: expenseTotal,
   }));
 
-  const budgetBarData = [
-    { name: 'Income', amount: totalMonthlyIncome, fill: chart.series.income },
-    { name: 'Expenses', amount: totalMonthlyExpenses, fill: chart.series.expenses },
-    { name: 'Debt', amount: totalMonthlyDebtPayments, fill: chart.series.debt },
-    { name: 'Savings', amount: totalMonthlySavingsContributions, fill: chart.series.savings },
-    { name: 'Leftover', amount: Math.max(0, monthlyLeftover), fill: chart.series.leftover },
-  ].filter((d) => d.amount > 0);
+  const budgetBarData = buildBudgetBarData(data, summary, {
+    income: chart.series.income,
+    expenses: chart.series.expenses,
+    debt: chart.series.debt,
+    savings: chart.series.savings,
+    leftover: chart.series.leftover,
+  });
 
   const chartHeight = { sm: 260, lg: 280 };
 
@@ -173,7 +168,7 @@ export const DashboardCharts = memo(function DashboardCharts({
                       axisLine={false}
                       tickLine={false}
                     />
-                    <Tooltip content={<ChartTooltip />} cursor={{ fill: chart.cursor }} />
+                    <Tooltip content={<BudgetBarTooltip />} cursor={{ fill: chart.cursor }} />
                     <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
                       {budgetBarData.map((entry, i) => (
                         <Cell key={i} fill={entry.fill} />
