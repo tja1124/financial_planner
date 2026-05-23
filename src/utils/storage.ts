@@ -3,6 +3,7 @@ import { createEmptyEmergencyFund, normalizeAppData } from './emergencyFund';
 
 export const STORAGE_KEY = 'finance_planner_data';
 export const ONBOARDING_KEY = 'finance_planner_onboarding_complete';
+export const TUTORIAL_KEY = 'finance_planner_tutorial_complete';
 export const LAST_SAVED_KEY = 'finance_planner_last_saved';
 
 export const DATA_VERSION = 3;
@@ -59,6 +60,18 @@ export function completeOnboarding(): void {
 
 export function resetOnboarding(): void {
   localStorage.removeItem(ONBOARDING_KEY);
+}
+
+export function hasCompletedTutorial(): boolean {
+  return localStorage.getItem(TUTORIAL_KEY) === 'true';
+}
+
+export function completeTutorial(): void {
+  localStorage.setItem(TUTORIAL_KEY, 'true');
+}
+
+export function resetTutorial(): void {
+  localStorage.removeItem(TUTORIAL_KEY);
 }
 
 export function clearAllStorage(): void {

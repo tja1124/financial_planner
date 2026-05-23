@@ -89,7 +89,8 @@ export function IncomePage({ income, onChange }: Props) {
         subtitle="Add all sources of income. Amounts are normalized to a monthly total for your plan."
       />
 
-      <Card>
+      <div data-tour="income-form">
+        <Card>
         <CardHeader title={editingId ? 'Edit Income Source' : 'Add Income Source'} />
         <FormAlerts validation={validation} />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
@@ -129,6 +130,7 @@ export function IncomePage({ income, onChange }: Props) {
           )}
         </div>
       </Card>
+      </div>
 
       {income.length > 0 ? (
         <Card>

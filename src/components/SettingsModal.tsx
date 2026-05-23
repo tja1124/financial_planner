@@ -12,9 +12,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onResetOnboarding: () => void;
+  onStartTutorial: () => void;
 }
 
-export function SettingsModal({ open, onClose, onResetOnboarding }: Props) {
+export function SettingsModal({ open, onClose, onResetOnboarding, onStartTutorial }: Props) {
   const { settings, updateSettings, resetSettings } = useSettings();
   const motionProps = useMotion();
 
@@ -115,6 +116,9 @@ export function SettingsModal({ open, onClose, onResetOnboarding }: Props) {
               </div>
 
               <div className="mt-8 pt-6 border-t divider space-y-3">
+                <Button variant="secondary" className="w-full" onClick={onStartTutorial}>
+                  Replay app tutorial
+                </Button>
                 <Button variant="secondary" className="w-full" onClick={resetSettings}>
                   Reset settings to defaults
                 </Button>

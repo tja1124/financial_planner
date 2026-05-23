@@ -265,7 +265,7 @@ export function ExpensesPage({ expenses, onChange }: Props) {
         <CardHeader title={editingId ? 'Edit Expense' : 'Add Expense'} />
 
         {/* Mode toggle */}
-        <div className="flex gap-2 mb-5">
+        <div className="flex gap-2 mb-5" data-tour="expense-mode-toggle">
           <ModeChip active={mode === 'recurring'} onClick={() => switchMode('recurring')}>
             Monthly recurring
           </ModeChip>

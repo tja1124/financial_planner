@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Layout } from './components/Layout';
 import { Onboarding } from './components/Onboarding';
+import { TourWelcomeModal } from './components/TourWelcomeModal';
 import { Toast } from './components/Toast';
 import { DashboardPage } from './pages/DashboardPage';
 import { IncomePage } from './pages/IncomePage';
@@ -8,6 +9,7 @@ import { ExpensesPage } from './pages/ExpensesPage';
 import { SavingsGoalsPage } from './pages/SavingsGoalsPage';
 import { AppActionsProvider, useAppActions } from './context/AppActionsContext';
 import { useSettings } from './context/SettingsContext';
+import { useAppTour } from './hooks/useAppTour';
 import {
   loadData,
   saveData,
@@ -20,6 +22,9 @@ import {
   parseImportFile,
   formatLastSaved,
   getLastSaved,
+  hasCompletedTutorial,
+  completeTutorial,
+  resetTutorial,
 } from './utils/storage';
 import { computeSummary } from './utils/calculations';
 import { demoData } from './data/demoData';
@@ -43,6 +48,7 @@ function PageFallback() {
 
 export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(() => !hasCompletedOnboarding());
+  const [showTutorialWelcome, setShowTutorialWelcome] = useState(false);
   const [page, setPage] = useState<Page>('dashboard');
   const [data, setData] = useState<AppData>(() => loadData());
   const [lastSaved, setLastSaved] = useState<string | null>(() =>
@@ -65,11 +71,26 @@ export default function App() {
       setPage('income');
     }
     setShowOnboarding(false);
+    // Show tour welcome if not already completed
+    if (!hasCompletedTutorial()) {
+      setShowTutorialWelcome(true);
+    }
   }, []);
 
   const handleResetOnboarding = useCallback(() => {
     resetOnboarding();
     setShowOnboarding(true);
+    setShowTutorialWelcome(false);
+  }, []);
+
+  const handleStartTutorialWelcome = useCallback(() => {
+    if (!hasCompletedTutorial()) {
+      setShowTutorialWelcome(true);
+    } else {
+      // Replay: reset and show again
+      resetTutorial();
+      setShowTutorialWelcome(true);
+    }
   }, []);
 
   if (showOnboarding) {
@@ -86,6 +107,9 @@ export default function App() {
         lastSaved={lastSaved}
         setLastSaved={setLastSaved}
         onResetOnboarding={handleResetOnboarding}
+        showTutorialWelcome={showTutorialWelcome}
+        setShowTutorialWelcome={setShowTutorialWelcome}
+        onRequestTutorial={handleStartTutorialWelcome}
       />
     </AppActionsProvider>
   );
@@ -99,6 +123,9 @@ function AppMain({
   lastSaved,
   setLastSaved,
   onResetOnboarding,
+  showTutorialWelcome,
+  setShowTutorialWelcome,
+  onRequestTutorial,
 }: {
   page: Page;
   setPage: (p: Page) => void;
@@ -107,8 +134,11 @@ function AppMain({
   lastSaved: string | null;
   setLastSaved: (v: string | null) => void;
   onResetOnboarding: () => void;
+  showTutorialWelcome: boolean;
+  setShowTutorialWelcome: (v: boolean) => void;
+  onRequestTutorial: () => void;
 }) {
-  const { settings } = useSettings();
+  const { settings, prefersReducedMotion } = useSettings();
   const { notifyUndo, showToast, toast, dismissToast } = useAppActions();
 
   const summary = useMemo(
@@ -131,6 +161,24 @@ function AppMain({
   );
 
   const navigate = useCallback((p: Page) => setPage(p), [setPage]);
+
+  const { startTour } = useAppTour({
+    navigate,
+    prefersReducedMotion,
+    onFinished: () => setShowTutorialWelcome(false),
+  });
+
+  const handleTourStart = useCallback(() => {
+    setShowTutorialWelcome(false);
+    // Navigate to dashboard before starting, then start
+    setPage('dashboard');
+    requestAnimationFrame(() => startTour());
+  }, [startTour, setPage, setShowTutorialWelcome]);
+
+  const handleTourSkip = useCallback(() => {
+    completeTutorial();
+    setShowTutorialWelcome(false);
+  }, [setShowTutorialWelcome]);
 
   const handleLoadDemo = useCallback(() => {
     const hasData =
@@ -206,6 +254,7 @@ function AppMain({
         onImport={handleImport}
         onReset={handleReset}
         onResetOnboarding={onResetOnboarding}
+        onStartTutorial={onRequestTutorial}
       >
         {page === 'dashboard' && (
           <DashboardPage data={data} summary={summary} onNavigate={navigate} />
@@ -246,6 +295,12 @@ function AppMain({
           onDismiss={dismissToast}
         />
       )}
+
+      <TourWelcomeModal
+        open={showTutorialWelcome}
+        onStart={handleTourStart}
+        onSkip={handleTourSkip}
+      />
     </>
   );
 }

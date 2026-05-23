@@ -32,6 +32,7 @@ interface Props {
   onImport: (file: File) => void;
   onReset: () => void;
   onResetOnboarding: () => void;
+  onStartTutorial: () => void;
   children: React.ReactNode;
 }
 
@@ -44,6 +45,7 @@ export function Layout({
   onImport,
   onReset,
   onResetOnboarding,
+  onStartTutorial,
   children,
 }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -148,6 +150,7 @@ export function Layout({
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         onResetOnboarding={onResetOnboarding}
+        onStartTutorial={() => { setSettingsOpen(false); onStartTutorial(); }}
       />
     </div>
   );

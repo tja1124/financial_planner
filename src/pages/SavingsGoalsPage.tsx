@@ -139,6 +139,7 @@ export function SavingsGoalsPage({
         subtitle="Your emergency reserve is separate from dated goals like vacations or major purchases."
       />
 
+      <div data-tour="emergency-fund-card">
       <EmergencyFundCard
         emergencyFund={emergencyFund}
         expenses={expenses}
@@ -147,8 +148,9 @@ export function SavingsGoalsPage({
         onChange={onEmergencyFundChange}
         onContribute={handleEmergencyContribute}
       />
+      </div>
 
-      <div>
+      <div data-tour="savings-goals">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 px-0.5">
           Savings goals
         </h2>
@@ -229,7 +231,6 @@ export function SavingsGoalsPage({
             )}
           </div>
         </Card>
-      </div>
 
       {savingsGoals.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -334,6 +335,7 @@ export function SavingsGoalsPage({
           />
         </Card>
       )}
+      </div>
     </div>
   );
 }

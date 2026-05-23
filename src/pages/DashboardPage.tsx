@@ -125,20 +125,23 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
     <PageTransition>
       <div className="page-stack-tight">
         <FadeIn>
-          <DashboardHero
-            isOnTrack={isOnTrack}
-            monthlyLeftover={monthlyLeftover}
-            safeWeeklySpending={safeWeeklySpending}
-            savingsRate={savingsRate}
-            debtFreeMonths={debtFreeMonths}
-            efRunwayMonths={efRunwayMonths}
-          />
+          <div data-tour="dashboard-hero">
+            <DashboardHero
+              isOnTrack={isOnTrack}
+              monthlyLeftover={monthlyLeftover}
+              safeWeeklySpending={safeWeeklySpending}
+              savingsRate={savingsRate}
+              debtFreeMonths={debtFreeMonths}
+              efRunwayMonths={efRunwayMonths}
+            />
+          </div>
         </FadeIn>
 
         <HealthScoreCard health={health} />
 
         {recommendations.length > 0 && (
-          <AnimatedCard delay={0.04} hoverLift>
+          <div data-tour="insights-section">
+            <AnimatedCard delay={0.04} hoverLift>
             <CardHeader
               title="Insights"
               subtitle={
@@ -155,6 +158,7 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
               onNavigate={onNavigate}
             />
           </AnimatedCard>
+          </div>
         )}
 
         <FadeIn delay={0.06}>

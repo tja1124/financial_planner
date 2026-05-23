@@ -70,7 +70,7 @@ export function ScenariosPage({ data }: Props) {
         subtitle="Compare how different strategies affect your monthly cash flow, debt timeline, and savings."
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3" data-tour="scenarios-presets">
         {PRESET_ORDER.map((preset) => {
           const metrics = allScenarios.find((s) => s.preset === preset)!;
           const isActive = selected === preset;
