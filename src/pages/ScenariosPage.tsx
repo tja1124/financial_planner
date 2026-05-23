@@ -205,7 +205,7 @@ export function ScenariosPage({ data }: Props) {
 
       <Card>
         <CardHeader title="Scenario comparison table" />
-        <div className="overflow-x-auto -mx-2">
+        <div className="table-scroll">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-slate-100">

@@ -2,9 +2,19 @@ import { useState } from 'react';
 import type { IncomeSource } from '../types';
 import { generateId } from '../utils/storage';
 import { toMonthly, formatCurrency } from '../utils/calculations';
+import {
+  mergeValidation,
+  validateRequiredName,
+  validatePositiveAmount,
+  parseNonNegativeInput,
+  emptyValidation,
+} from '../utils/validation';
 import { Card, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input, Select } from '../components/Input';
+import { PageHeader } from '../components/PageHeader';
+import { FormAlerts } from '../components/FormAlerts';
+import { EmptyState } from '../components/EmptyState';
 
 const FREQUENCY_OPTIONS = [
   { value: 'monthly', label: 'Monthly' },
@@ -25,9 +35,16 @@ function emptySource(): Omit<IncomeSource, 'id'> {
 export function IncomePage({ income, onChange }: Props) {
   const [form, setForm] = useState<Omit<IncomeSource, 'id'>>(emptySource());
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [validation, setValidation] = useState(emptyValidation());
 
   function handleAdd() {
-    if (!form.name.trim() || form.amount <= 0) return;
+    const result = mergeValidation(
+      validateRequiredName(form.name),
+      validatePositiveAmount(form.amount, 'Income amount'),
+    );
+    setValidation(result);
+    if (!result.valid) return;
+
     if (editingId) {
       onChange(income.map((s) => (s.id === editingId ? { ...form, id: editingId } : s)));
       setEditingId(null);
@@ -35,11 +52,13 @@ export function IncomePage({ income, onChange }: Props) {
       onChange([...income, { ...form, id: generateId() }]);
     }
     setForm(emptySource());
+    setValidation(emptyValidation());
   }
 
   function handleEdit(source: IncomeSource) {
     setEditingId(source.id);
     setForm({ name: source.name, amount: source.amount, frequency: source.frequency });
+    setValidation(emptyValidation());
   }
 
   function handleDelete(id: string) {
@@ -49,36 +68,39 @@ export function IncomePage({ income, onChange }: Props) {
   function handleCancel() {
     setEditingId(null);
     setForm(emptySource());
+    setValidation(emptyValidation());
   }
 
   const totalMonthly = income.reduce((sum, s) => sum + toMonthly(s.amount, s.frequency), 0);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Income</h1>
-        <p className="text-slate-500 text-sm mt-1">Add all sources of income to calculate your monthly total.</p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Income"
+        subtitle="Add all sources of income. Amounts are normalized to a monthly total for your plan."
+      />
 
       <Card>
         <CardHeader title={editingId ? 'Edit Income Source' : 'Add Income Source'} />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="sm:col-span-1">
-            <Input
-              label="Source name"
-              placeholder="e.g. Salary, Freelance"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </div>
+        <FormAlerts validation={validation} />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+          <Input
+            label="Source name"
+            placeholder="e.g. Salary, Freelance"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
           <Input
             label="Amount"
             type="number"
             min={0}
+            step="0.01"
             placeholder="0"
             prefix="$"
             value={form.amount || ''}
-            onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })}
+            onChange={(e) =>
+              setForm({ ...form, amount: parseNonNegativeInput(e.target.value) })
+            }
           />
           <Select
             label="Frequency"
@@ -89,10 +111,8 @@ export function IncomePage({ income, onChange }: Props) {
             }
           />
         </div>
-        <div className="flex gap-2 mt-4">
-          <Button onClick={handleAdd} disabled={!form.name.trim() || form.amount <= 0}>
-            {editingId ? 'Save Changes' : '+ Add Source'}
-          </Button>
+        <div className="flex flex-col sm:flex-row gap-2 mt-5">
+          <Button onClick={handleAdd}>{editingId ? 'Save Changes' : '+ Add Source'}</Button>
           {editingId && (
             <Button variant="secondary" onClick={handleCancel}>
               Cancel
@@ -101,12 +121,12 @@ export function IncomePage({ income, onChange }: Props) {
         </div>
       </Card>
 
-      {income.length > 0 && (
+      {income.length > 0 ? (
         <Card>
           <CardHeader
             title="Income Sources"
             action={
-              <span className="text-sm font-semibold text-indigo-600">
+              <span className="text-sm font-semibold text-indigo-600 tabular-nums">
                 {formatCurrency(totalMonthly)}/mo
               </span>
             }
@@ -115,16 +135,16 @@ export function IncomePage({ income, onChange }: Props) {
             {income.map((source) => (
               <div
                 key={source.id}
-                className="flex items-center justify-between py-3 gap-4"
+                className="flex flex-col sm:flex-row sm:items-center justify-between py-4 gap-3"
               >
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-slate-800 truncate">{source.name}</p>
-                  <p className="text-xs text-slate-500 capitalize">
+                  <p className="text-xs text-slate-500 capitalize mt-0.5">
                     {formatCurrency(source.amount)} {source.frequency} ·{' '}
                     {formatCurrency(toMonthly(source.amount, source.frequency))}/mo
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 shrink-0">
                   <Button size="sm" variant="ghost" onClick={() => handleEdit(source)}>
                     Edit
                   </Button>
@@ -136,14 +156,14 @@ export function IncomePage({ income, onChange }: Props) {
             ))}
           </div>
         </Card>
-      )}
-
-      {income.length === 0 && (
-        <div className="text-center py-16 text-slate-400">
-          <p className="text-4xl mb-3">💰</p>
-          <p className="font-medium">No income sources yet</p>
-          <p className="text-sm mt-1">Add your first income source above.</p>
-        </div>
+      ) : (
+        <Card>
+          <EmptyState
+            icon="💰"
+            title="No income sources yet"
+            description="Add your salary, freelance work, or other income to power your dashboard and forecasts."
+          />
+        </Card>
       )}
     </div>
   );

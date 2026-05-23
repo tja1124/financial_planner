@@ -10,6 +10,7 @@ import { Card, CardHeader } from '../components/Card';
 import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { RecommendationCard } from '../components/RecommendationCard';
+import { ChartContainer } from '../components/ChartContainer';
 import {
   PieChart,
   Pie,
@@ -156,7 +157,8 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
           title="12-Month Cashflow Forecast"
           subtitle="Projected income, obligations, and cumulative cash position"
         />
-        <ResponsiveContainer width="100%" height={300}>
+        <ChartContainer height={300}>
+        <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={cashflow} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
             <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} />
@@ -180,6 +182,7 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
             />
           </ComposedChart>
         </ResponsiveContainer>
+        </ChartContainer>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100">
           <ForecastStat label="Year-end cash" value={cashflow[cashflow.length - 1]?.cumulativeCash ?? 0} />
           <ForecastStat
@@ -201,7 +204,8 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
         {budgetBarData.length > 0 && (
           <Card>
             <CardHeader title="Monthly Budget" />
-            <ResponsiveContainer width="100%" height={240}>
+            <ChartContainer height={240}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={budgetBarData} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} />
@@ -214,13 +218,15 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            </ChartContainer>
           </Card>
         )}
 
         {expensePieData.length > 0 && (
           <Card>
             <CardHeader title="Expenses by Category" />
-            <ResponsiveContainer width="100%" height={240}>
+            <ChartContainer height={240}>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={expensePieData}
@@ -239,6 +245,7 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
                 <Legend formatter={(value) => <span className="text-xs text-slate-600">{value}</span>} />
               </PieChart>
             </ResponsiveContainer>
+            </ChartContainer>
           </Card>
         )}
       </div>

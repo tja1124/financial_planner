@@ -8,11 +8,18 @@ import {
   STRATEGY_LABELS,
   STRATEGY_DESCRIPTIONS,
 } from '../utils/debtStrategies';
+import {
+  validateDebt,
+  parseNonNegativeInput,
+  emptyValidation,
+} from '../utils/validation';
 import { Card, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
+import { FormAlerts } from '../components/FormAlerts';
+import { ChartContainer } from '../components/ChartContainer';
 import {
   LineChart,
   Line,
@@ -46,6 +53,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedDebtId, setSelectedDebtId] = useState<string | null>(null);
   const [compareView, setCompareView] = useState(true);
+  const [validation, setValidation] = useState(emptyValidation());
 
   const strategyResults = useMemo(
     () => STRATEGIES.map((s) => simulateDebtStrategy(debts, s)),
@@ -80,7 +88,10 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
   }, [strategyResults]);
 
   function handleAdd() {
-    if (!form.name.trim() || form.balance <= 0) return;
+    const result = validateDebt(form);
+    setValidation(result);
+    if (!result.valid) return;
+
     if (editingId) {
       onChange(debts.map((d) => (d.id === editingId ? { ...form, id: editingId } : d)));
       setEditingId(null);
@@ -90,6 +101,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
       if (!selectedDebtId) setSelectedDebtId(newDebt.id);
     }
     setForm(emptyDebt());
+    setValidation(emptyValidation());
   }
 
   function handleEdit(debt: Debt) {
@@ -101,6 +113,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
       minimumPayment: debt.minimumPayment,
       extraPayment: debt.extraPayment,
     });
+    setValidation(emptyValidation());
   }
 
   function handleDelete(id: string) {
@@ -132,7 +145,8 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
 
       <Card>
         <CardHeader title={editingId ? 'Edit Debt' : 'Add Debt'} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <FormAlerts validation={validation} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           <Input
             label="Debt name"
             placeholder="e.g. Credit Card, Car Loan"
@@ -146,7 +160,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             placeholder="0"
             prefix="$"
             value={form.balance || ''}
-            onChange={(e) => setForm({ ...form, balance: parseFloat(e.target.value) || 0 })}
+            onChange={(e) => setForm({ ...form, balance: parseNonNegativeInput(e.target.value) })}
           />
           <Input
             label="Interest rate"
@@ -157,7 +171,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             placeholder="0"
             suffix="%"
             value={form.interestRate || ''}
-            onChange={(e) => setForm({ ...form, interestRate: parseFloat(e.target.value) || 0 })}
+            onChange={(e) => setForm({ ...form, interestRate: parseNonNegativeInput(e.target.value) })}
           />
           <Input
             label="Minimum payment"
@@ -166,7 +180,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             placeholder="0"
             prefix="$"
             value={form.minimumPayment || ''}
-            onChange={(e) => setForm({ ...form, minimumPayment: parseFloat(e.target.value) || 0 })}
+            onChange={(e) => setForm({ ...form, minimumPayment: parseNonNegativeInput(e.target.value) })}
           />
           <Input
             label="Extra payment (custom)"
@@ -175,18 +189,23 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             placeholder="0"
             prefix="$"
             value={form.extraPayment || ''}
-            onChange={(e) => setForm({ ...form, extraPayment: parseFloat(e.target.value) || 0 })}
+            onChange={(e) => setForm({ ...form, extraPayment: parseNonNegativeInput(e.target.value) })}
           />
         </div>
         <p className="text-xs text-slate-500 mt-3">
           Extra payments apply to the Custom strategy. Snowball and avalanche pool all extras automatically.
         </p>
-        <div className="flex gap-2 mt-4">
-          <Button onClick={handleAdd} disabled={!form.name.trim() || form.balance <= 0}>
-            {editingId ? 'Save Changes' : '+ Add Debt'}
-          </Button>
+        <div className="flex flex-col sm:flex-row gap-2 mt-5">
+          <Button onClick={handleAdd}>{editingId ? 'Save Changes' : '+ Add Debt'}</Button>
           {editingId && (
-            <Button variant="secondary" onClick={() => { setEditingId(null); setForm(emptyDebt()); }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setEditingId(null);
+                setForm(emptyDebt());
+                setValidation(emptyValidation());
+              }}
+            >
               Cancel
             </Button>
           )}
@@ -287,7 +306,8 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
             </div>
 
             {compareView && comparisonChartData.length > 1 && (
-              <ResponsiveContainer width="100%" height={260}>
+              <ChartContainer height={260}>
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={comparisonChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `Mo ${v}`} />
@@ -307,6 +327,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                   ))}
                 </LineChart>
               </ResponsiveContainer>
+              </ChartContainer>
             )}
           </Card>
 
@@ -320,7 +341,8 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                     : `Paid off in ${payoffMonths} months · ${formatCurrency(totalInterest)} interest`
                 }
               />
-              <ResponsiveContainer width="100%" height={200}>
+              <ChartContainer height={200}>
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={singleChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} />
@@ -329,6 +351,7 @@ export function DebtPlannerPage({ debts, onChange }: Props) {
                   <Line type="monotone" dataKey="balance" stroke="#6366f1" strokeWidth={2} dot={false} name="Balance" />
                 </LineChart>
               </ResponsiveContainer>
+              </ChartContainer>
             </Card>
           )}
         </>

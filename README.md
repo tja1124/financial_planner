@@ -1,73 +1,85 @@
-# React + TypeScript + Vite
+# FinancePlanner
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A **local-first** personal finance planner built with React, TypeScript, and Vite. Plan income, expenses, debt payoff, savings goals, and 12-month cashflow — with no backend, accounts, or bank connections.
 
-Currently, two official plugins are available:
+Your data stays in your browser via `localStorage`. Export a JSON backup anytime.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- **Dashboard** — Budget overview, safe weekly spending, 12-month cashflow forecast, recommendations
+- **Income & Expenses** — Track sources and categories (fixed vs variable)
+- **Debt Planner** — Snowball, avalanche, and custom payoff strategies with comparison charts
+- **Savings Goals** — Targets, progress bars, and monthly contribution estimates
+- **Scenarios** — Compare current plan vs aggressive debt payoff, higher savings, lower spending, or custom sliders
+- **Data controls** — Export/import JSON backups, demo data, reset with confirmation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Screenshots
 
-## Expanding the ESLint configuration
+<!-- Add screenshots after deployment, e.g.:
+![Dashboard](./docs/screenshots/dashboard.png)
+![Debt Planner](./docs/screenshots/debt.png)
+-->
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Quick start
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- [Node.js](https://nodejs.org/) 20+ (LTS recommended)
+- npm 10+
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Install & run
+
+```bash
+cd finance_planner
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open [http://localhost:5173](http://localhost:5173).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Production build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+npm run preview   # serve dist/ locally
 ```
+
+Output is in `dist/` — deploy to any static host (Vercel, Netlify, GitHub Pages, Cloudflare Pages, etc.).
+
+## Project structure
+
+```
+src/
+  components/   UI primitives (cards, forms, charts, onboarding)
+  pages/        Route views
+  utils/        Calculations, storage, validation, scenarios
+  types/        Shared TypeScript types
+  data/         Demo dataset
+```
+
+## Data & privacy
+
+- All financial data is stored in **browser localStorage** only.
+- Nothing is sent to a server.
+- Use **Data → Export backup** to download a JSON file.
+- Use **Data → Import backup** to restore on this or another device (same browser storage model).
+
+## Scripts
+
+| Command           | Description                |
+| ----------------- | -------------------------- |
+| `npm run dev`     | Start dev server           |
+| `npm run build`   | Typecheck + production build |
+| `npm run preview` | Preview production build   |
+| `npm run lint`    | Run ESLint                 |
+
+## Tech stack
+
+- React 19 + TypeScript
+- Vite 8
+- Tailwind CSS 4
+- Recharts
+
+## License
+
+Private / personal use — adjust as needed for your deployment.

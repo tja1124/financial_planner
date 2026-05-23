@@ -2,9 +2,17 @@ import { useState } from 'react';
 import type { SavingsGoal } from '../types';
 import { generateId } from '../utils/storage';
 import { formatCurrency, monthsUntil } from '../utils/calculations';
+import {
+  validateSavingsGoal,
+  parseNonNegativeInput,
+  emptyValidation,
+} from '../utils/validation';
 import { Card, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { PageHeader } from '../components/PageHeader';
+import { FormAlerts } from '../components/FormAlerts';
+import { EmptyState } from '../components/EmptyState';
 
 interface Props {
   savingsGoals: SavingsGoal[];
@@ -25,9 +33,13 @@ function emptyGoal(): Omit<SavingsGoal, 'id'> {
 export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
   const [form, setForm] = useState<Omit<SavingsGoal, 'id'>>(emptyGoal());
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [validation, setValidation] = useState(emptyValidation());
 
   function handleAdd() {
-    if (!form.name.trim() || form.targetAmount <= 0) return;
+    const result = validateSavingsGoal(form);
+    setValidation(result);
+    if (!result.valid) return;
+
     if (editingId) {
       onChange(savingsGoals.map((g) => (g.id === editingId ? { ...form, id: editingId } : g)));
       setEditingId(null);
@@ -35,6 +47,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
       onChange([...savingsGoals, { ...form, id: generateId() }]);
     }
     setForm(emptyGoal());
+    setValidation(emptyValidation());
   }
 
   function handleEdit(goal: SavingsGoal) {
@@ -45,6 +58,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
       currentAmount: goal.currentAmount,
       targetDate: goal.targetDate,
     });
+    setValidation(emptyValidation());
   }
 
   function handleDelete(id: string) {
@@ -60,15 +74,16 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Savings Goals</h1>
-        <p className="text-slate-500 text-sm mt-1">Set and track your savings targets.</p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Savings Goals"
+        subtitle="Set targets and dates. We'll estimate monthly contributions and track progress."
+      />
 
       <Card>
         <CardHeader title={editingId ? 'Edit Goal' : 'Add Savings Goal'} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <FormAlerts validation={validation} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           <Input
             label="Goal name"
             placeholder="e.g. Emergency Fund"
@@ -82,7 +97,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
             placeholder="0"
             prefix="$"
             value={form.targetAmount || ''}
-            onChange={(e) => setForm({ ...form, targetAmount: parseFloat(e.target.value) || 0 })}
+            onChange={(e) => setForm({ ...form, targetAmount: parseNonNegativeInput(e.target.value) })}
           />
           <Input
             label="Already saved"
@@ -91,7 +106,7 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
             placeholder="0"
             prefix="$"
             value={form.currentAmount || ''}
-            onChange={(e) => setForm({ ...form, currentAmount: parseFloat(e.target.value) || 0 })}
+            onChange={(e) => setForm({ ...form, currentAmount: parseNonNegativeInput(e.target.value) })}
           />
           <Input
             label="Target date"
@@ -100,12 +115,17 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
             onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
           />
         </div>
-        <div className="flex gap-2 mt-4">
-          <Button onClick={handleAdd} disabled={!form.name.trim() || form.targetAmount <= 0}>
-            {editingId ? 'Save Changes' : '+ Add Goal'}
-          </Button>
+        <div className="flex flex-col sm:flex-row gap-2 mt-5">
+          <Button onClick={handleAdd}>{editingId ? 'Save Changes' : '+ Add Goal'}</Button>
           {editingId && (
-            <Button variant="secondary" onClick={() => { setEditingId(null); setForm(emptyGoal()); }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setEditingId(null);
+                setForm(emptyGoal());
+                setValidation(emptyValidation());
+              }}
+            >
               Cancel
             </Button>
           )}
@@ -183,11 +203,13 @@ export function SavingsGoalsPage({ savingsGoals, onChange }: Props) {
       )}
 
       {savingsGoals.length === 0 && (
-        <div className="text-center py-16 text-slate-400">
-          <p className="text-4xl mb-3">🎯</p>
-          <p className="font-medium">No savings goals yet</p>
-          <p className="text-sm mt-1">Create your first goal above to start saving.</p>
-        </div>
+        <Card>
+          <EmptyState
+            icon="🎯"
+            title="No savings goals yet"
+            description="Create an emergency fund, vacation fund, or any savings target with a deadline."
+          />
+        </Card>
       )}
     </div>
   );
