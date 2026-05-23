@@ -30,7 +30,6 @@ export function TourWelcomeModal({ open, onStart, onSkip }: Props) {
             className="relative surface-overlay rounded-2xl w-full max-w-sm overflow-hidden z-10"
             {...motionProps.modalPanel}
           >
-            {/* Indigo accent stripe */}
             <div className="h-[3px] w-full bg-indigo-500 dark:bg-indigo-400" />
 
             <div className="p-7 sm:p-8">
@@ -44,25 +43,20 @@ export function TourWelcomeModal({ open, onStart, onSkip }: Props) {
                 id="tour-welcome-title"
                 className="text-xl font-bold text-primary tracking-tight text-center leading-snug"
               >
-                Welcome to FinancePlanner
+                Take a quick tour
               </h2>
               <p className="text-sm text-secondary mt-2.5 text-center leading-relaxed">
-                Plan your income, expenses, debt payoff, emergency fund, and savings goals — all
-                locally on your device.
+                Learn the core workflow in under a minute. You can replay this anytime from Settings.
               </p>
 
               <div className="mt-7 flex flex-col gap-2.5">
                 <Button className="w-full" onClick={onStart}>
-                  Start quick tour
+                  Start tour
                 </Button>
                 <Button variant="ghost" className="w-full" onClick={onSkip}>
-                  Skip for now
+                  Skip
                 </Button>
               </div>
-
-              <p className="text-[11px] text-muted text-center mt-4 leading-relaxed">
-                You can replay this tour anytime from Settings.
-              </p>
             </div>
           </motion.div>
         </div>

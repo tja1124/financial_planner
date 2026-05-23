@@ -4,48 +4,79 @@ import 'driver.js/dist/driver.css';
 import type { Page } from '../types';
 import { completeTutorial } from '../utils/storage';
 
-const TOUR_STEPS: { page: Page; element: string; title: string; description: string }[] = [
+type Side = 'top' | 'bottom' | 'left' | 'right';
+type Align = 'start' | 'center' | 'end';
+
+const TOUR_STEPS: {
+  page: Page;
+  element: string;
+  title: string;
+  description: string;
+  side?: Side;
+  align?: Align;
+}[] = [
   {
     page: 'dashboard',
     element: '[data-tour="dashboard-hero"]',
-    title: 'Your financial dashboard',
+    title: 'Start with your monthly picture',
     description:
-      'See your monthly cashflow, savings progress, debt timeline, and emergency runway — updated automatically as you add data.',
+      'See your net monthly cashflow, weekly flex, savings rate, debt timeline, and emergency runway at a glance.',
+    side: 'bottom',
+    align: 'start',
+  },
+  {
+    page: 'dashboard',
+    element: '[data-tour="insights-section"]',
+    title: 'Review smart insights',
+    description:
+      'The app flags the highest-priority actions and lets you acknowledge items once handled.',
+    side: 'top',
+    align: 'start',
   },
   {
     page: 'income',
     element: '[data-tour="income-form"]',
-    title: 'Add your income sources',
+    title: 'Add your income',
     description:
-      'Enter your salary, freelance, or any other income after taxes. Projections across all pages update immediately.',
+      'Enter recurring income so the app can calculate monthly cashflow and available flexibility.',
+    side: 'bottom',
+    align: 'start',
   },
   {
     page: 'expenses',
     element: '[data-tour="expense-mode-toggle"]',
-    title: 'Track recurring and planned expenses',
+    title: 'Track bills and planned costs',
     description:
-      'Log fixed and variable bills under Recurring. Use Planned for one-time costs like a trip or wedding — the app calculates monthly savings required.',
+      'Add recurring expenses or planned expenses with a deadline, like a wedding or large purchase.',
+    side: 'bottom',
+    align: 'start',
   },
   {
     page: 'debt',
-    element: '[data-tour="debt-strategy"]',
-    title: 'Debt payoff strategies',
+    element: '[data-tour="debt-strategy-card"]',
+    title: 'Plan your debt payoff',
     description:
-      'Add loans and credit cards to compare snowball, avalanche, and custom payoff strategies — and see exactly when you become debt-free.',
+      'Compare payoff strategies and see how extra payments affect your timeline.',
+    side: 'bottom',
+    align: 'start',
   },
   {
     page: 'savings',
     element: '[data-tour="emergency-fund-card"]',
-    title: 'Emergency fund and savings goals',
+    title: 'Build your emergency fund',
     description:
-      'Your emergency reserve is tracked separately from optional goals so runway calculations stay accurate. Add a monthly contribution plan to both.',
+      'Your emergency fund powers runway calculations, while other goals track optional savings.',
+    side: 'bottom',
+    align: 'start',
   },
   {
     page: 'scenarios',
     element: '[data-tour="scenarios-presets"]',
-    title: 'Test financial decisions safely',
+    title: 'Test financial scenarios',
     description:
-      'Scenarios let you model what happens if you reduce spending, accelerate debt payoff, or increase savings — before committing to any change.',
+      'Preview how changes to income, expenses, savings, or debt affect your plan.',
+    side: 'bottom',
+    align: 'start',
   },
 ];
 
@@ -72,7 +103,6 @@ export function useAppTour({ navigate, prefersReducedMotion, onFinished }: Optio
   const startTour = useCallback(() => {
     driverRef.current?.destroy();
 
-    // Ensure we start on dashboard
     navigateRef.current('dashboard');
 
     const driverObj = driver({
@@ -84,9 +114,8 @@ export function useAppTour({ navigate, prefersReducedMotion, onFinished }: Optio
       progressText: '{{current}} of {{total}}',
       nextBtnText: 'Next',
       prevBtnText: 'Back',
-      doneBtnText: 'Finish',
+      doneBtnText: 'Finish tour',
       onPopoverRender: (popover) => {
-        // Remove default close button's default icon (replaced via CSS)
         popover.closeButton.setAttribute('aria-label', 'Close tour');
       },
       onNextClick: () => {
@@ -99,7 +128,6 @@ export function useAppTour({ navigate, prefersReducedMotion, onFinished }: Optio
 
           if (nextStep.page !== currentStep.page) {
             navigateRef.current(nextStep.page);
-            // Wait one animation frame tick for React to commit the new page
             requestAnimationFrame(() => {
               requestAnimationFrame(() => {
                 driverObj.moveNext();
@@ -144,8 +172,8 @@ export function useAppTour({ navigate, prefersReducedMotion, onFinished }: Optio
         popover: {
           title: step.title,
           description: step.description,
-          side: 'bottom' as const,
-          align: 'start' as const,
+          side: step.side ?? ('bottom' as Side),
+          align: step.align ?? ('start' as Align),
         },
       })),
     });
