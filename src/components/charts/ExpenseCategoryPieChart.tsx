@@ -11,113 +11,158 @@ export type ExpensePieDatum = {
 
 type ChartTheme = ReturnType<typeof useChartTheme>;
 
+/** Canonical slice model — single source for pie sectors and visible legend. */
+interface ChartCategorySlice {
+  id: string;
+  name: string;
+  value: number;
+  total: number;
+  color: string;
+}
+
 interface Props {
   data: ExpensePieDatum[];
   chart: ChartTheme;
 }
 
-/** Resolve pie sector index from Recharts mouse event data (never rely on legend payload order). */
-function sectorIndex(
+function buildChartData(
   data: ExpensePieDatum[],
-  sector: { name?: string } | undefined,
+  chart: ChartTheme,
+): ChartCategorySlice[] {
+  const total =
+    data[0]?.total ?? data.reduce((sum, d) => sum + d.value, 0);
+  return [...data]
+    .sort((a, b) => b.value - a.value)
+    .map((d, index) => ({
+      id: d.name,
+      name: d.name,
+      value: d.value,
+      total,
+      color: chart.pieColor(index),
+    }));
+}
+
+function categoryIdFromSector(
+  sector: { id?: string; name?: string } | undefined,
+  chartData: ChartCategorySlice[],
   fallbackIndex: number,
-): number {
-  if (!sector?.name) return fallbackIndex;
-  const idx = data.findIndex((d) => d.name === sector.name);
-  return idx >= 0 ? idx : fallbackIndex;
+): string | null {
+  if (sector?.id) return sector.id;
+  if (sector?.name) {
+    const match = chartData.find((c) => c.name === sector.name);
+    if (match) return match.id;
+  }
+  const fallback = chartData[fallbackIndex];
+  return fallback?.id ?? null;
 }
 
 export function ExpenseCategoryPieChart({ data, chart }: Props) {
-  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+  const chartData = useMemo(() => buildChartData(data, chart), [data, chart]);
 
-  const clearActive = useCallback(() => setActiveIndex(undefined), []);
-  const setActive = useCallback((index: number) => setActiveIndex(index), []);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
 
-  const activeDatum = activeIndex != null ? data[activeIndex] : undefined;
+  const clearActive = useCallback(() => setActiveCategoryId(null), []);
+
+  const activeSlice = useMemo(
+    () => chartData.find((c) => c.id === activeCategoryId),
+    [chartData, activeCategoryId],
+  );
 
   const tooltipPayload = useMemo(() => {
-    if (!activeDatum || activeIndex == null) return undefined;
+    if (!activeSlice) return undefined;
     return [
       {
-        name: activeDatum.name,
-        value: activeDatum.value,
-        payload: activeDatum,
-        color: chart.pieColor(activeIndex),
+        name: activeSlice.name,
+        value: activeSlice.value,
+        payload: {
+          name: activeSlice.name,
+          value: activeSlice.value,
+          total: activeSlice.total,
+        },
+        color: activeSlice.color,
       },
     ];
-  }, [activeDatum, activeIndex, chart]);
+  }, [activeSlice]);
 
-  if (data.length === 0) return null;
+  if (chartData.length === 0) return null;
 
   return (
     <div
-      className="relative w-full h-full min-h-[200px]"
+      className="flex flex-col h-full w-full min-h-0"
       onMouseLeave={clearActive}
     >
-      {activeDatum && tooltipPayload && (
-        <div className="absolute top-2 right-2 z-10 pointer-events-none">
-          <PieChartTooltip active payload={tooltipPayload} />
-        </div>
-      )}
+      {/* Donut — fixed height so legend is never clipped */}
+      <div className="relative h-[200px] w-full shrink-0">
+        {activeSlice && tooltipPayload && (
+          <div className="absolute top-2 right-2 z-10 pointer-events-none">
+            <PieChartTooltip active payload={tooltipPayload} />
+          </div>
+        )}
 
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={data}
-            nameKey="name"
-            cx="50%"
-            cy="48%"
-            innerRadius={50}
-            outerRadius={82}
-            paddingAngle={2}
-            dataKey="value"
-            onMouseEnter={(sector, fallbackIndex) =>
-              setActive(sectorIndex(data, sector, fallbackIndex))
-            }
-          >
-            {data.map((datum, index) => {
-              const isActive = activeIndex === index;
-              const dimmed = activeIndex != null && !isActive;
-              return (
-                <Cell
-                  key={datum.name}
-                  fill={chart.pieColor(index)}
-                  stroke={isActive ? chart.pieColor(index) : 'transparent'}
-                  strokeWidth={isActive ? 2 : 0}
-                  opacity={dimmed ? 0.4 : 1}
-                />
-              );
-            })}
-          </Pie>
-          <Tooltip content={() => null} />
-        </PieChart>
-      </ResponsiveContainer>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="48%"
+              innerRadius={50}
+              outerRadius={82}
+              paddingAngle={2}
+              onMouseEnter={(sector, fallbackIndex) => {
+                const id = categoryIdFromSector(
+                  sector as { id?: string; name?: string },
+                  chartData,
+                  fallbackIndex,
+                );
+                if (id) setActiveCategoryId(id);
+              }}
+            >
+              {chartData.map((item) => {
+                const isActive = activeCategoryId === item.id;
+                const dimmed = activeCategoryId != null && !isActive;
+                return (
+                  <Cell
+                    key={item.id}
+                    fill={item.color}
+                    stroke={isActive ? item.color : 'transparent'}
+                    strokeWidth={isActive ? 2 : 0}
+                    opacity={dimmed ? 0.4 : 1}
+                  />
+                );
+              })}
+            </Pie>
+            <Tooltip content={() => null} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
 
-      {/* Legend driven by the same `data` array order as pie sectors */}
+      {/* Legend — same chartData as pie; names only */}
       <ul
-        className="flex flex-wrap justify-center gap-x-4 gap-y-2 pt-2"
+        className="shrink-0 flex flex-wrap justify-center gap-x-4 gap-y-2 pt-2 pb-1"
         aria-label="Expense categories"
       >
-        {data.map((datum, index) => {
-          const isActive = activeIndex === index;
-          const dimmed = activeIndex != null && !isActive;
+        {chartData.map((item) => {
+          const isActive = activeCategoryId === item.id;
+          const dimmed = activeCategoryId != null && !isActive;
           return (
-            <li key={datum.name}>
+            <li key={item.id}>
               <button
                 type="button"
-                className={`inline-flex items-center gap-1.5 text-xs font-medium transition-opacity cursor-pointer accent-ring rounded px-1 py-0.5 ${
+                className={`inline-flex items-center gap-1.5 text-xs font-medium transition-opacity cursor-pointer accent-ring rounded px-1 py-0.5 max-w-full ${
                   dimmed ? 'opacity-45' : 'opacity-100'
                 } ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-secondary'}`}
-                onMouseEnter={() => setActive(index)}
-                onFocus={() => setActive(index)}
+                onMouseEnter={() => setActiveCategoryId(item.id)}
+                onFocus={() => setActiveCategoryId(item.id)}
                 onBlur={clearActive}
               >
                 <span
                   className="w-2 h-2 rounded-full shrink-0"
-                  style={{ backgroundColor: chart.pieColor(index) }}
+                  style={{ backgroundColor: item.color }}
                   aria-hidden
                 />
-                {datum.name}
+                <span className="truncate">{item.name}</span>
               </button>
             </li>
           );
