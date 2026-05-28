@@ -170,6 +170,8 @@ export interface AppSettings {
   exportIncludeTimestamp: boolean;
   /** Stable recommendation IDs hidden from the dashboard insights list */
   acknowledgedInsightIds: string[];
+  /** Available cash for allocation planning on the dashboard (not used in budget calculations) */
+  availableCash: number;
 }
 
 export interface HealthScoreFactor {

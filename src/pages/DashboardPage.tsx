@@ -18,6 +18,7 @@ import { AnimatedCard } from '../components/motion/AnimatedCard';
 import { FadeIn } from '../components/motion/FadeIn';
 import { PageTransition } from '../components/motion/PageTransition';
 import { AppIcon, EMPTY_STATE_ICONS } from '../components/icons';
+import { OptimizeCashCard } from '../components/OptimizeCashCard';
 import { ArrowRight } from 'lucide-react';
 
 const DashboardCharts = lazy(() =>
@@ -215,6 +216,15 @@ export function DashboardPage({ data, summary, onNavigate }: Props) {
         >
           <DashboardCharts data={data} summary={summary} cashflow={cashflow} />
         </Suspense>
+
+        <FadeIn delay={0.11}>
+          <OptimizeCashCard
+            data={data}
+            availableCash={settings.availableCash}
+            onCashChange={(amount) => updateSettings({ availableCash: amount })}
+            onNavigate={onNavigate}
+          />
+        </FadeIn>
 
         {data.savingsGoals.length > 0 && (
           <AnimatedCard delay={0.12}>

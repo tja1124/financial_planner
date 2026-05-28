@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   reducedMotion: false,
   exportIncludeTimestamp: true,
   acknowledgedInsightIds: [],
+  availableCash: 0,
 };
 
 export const CURRENCY_OPTIONS: { code: CurrencyCode; label: string }[] = [
@@ -30,6 +31,10 @@ export function loadSettings(): AppSettings {
       acknowledgedInsightIds: Array.isArray(parsed.acknowledgedInsightIds)
         ? parsed.acknowledgedInsightIds.filter((id): id is string => typeof id === 'string')
         : [],
+      availableCash:
+        typeof parsed.availableCash === 'number' && parsed.availableCash >= 0
+          ? parsed.availableCash
+          : 0,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
