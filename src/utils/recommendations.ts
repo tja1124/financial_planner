@@ -1,5 +1,6 @@
 import type { AppData, Recommendation, FinancialSummary } from '../types';
 import { formatCurrency } from './calculations';
+import { getDebtPaymentEfficiencyRatio } from './healthScore';
 import { simulateDebtStrategy } from './debtStrategies';
 import {
   computeEmergencyRunwayMonths,
@@ -141,13 +142,46 @@ export function getRecommendations(
     }
   }
 
-  const highInterestDebt = data.debts.find((d) => d.interestRate >= 15 && d.balance > 0);
-  if (highInterestDebt && highInterestDebt.extraPayment < 50) {
+  const highInterestDebt = data.debts
+    .filter((d) => d.interestRate >= 15 && d.balance > 0 && d.extraPayment < 50)
+    .sort((a, b) => b.interestRate - a.interestRate)[0];
+  const hasHighInterestWarning = highInterestDebt != null;
+
+  if (highInterestDebt) {
     recs.push({
       id: `high-interest-${highInterestDebt.id}`,
       priority: 'warning',
-      title: `Prioritize ${highInterestDebt.name}`,
-      description: `At ${highInterestDebt.interestRate}% APR, extra payments here save the most. Try avalanche in Debt Planner.`,
+      title: 'High-interest debt is slowing long-term progress',
+      description: `${highInterestDebt.name} at ${highInterestDebt.interestRate}% APR benefits most from extra payments. Increasing payments could significantly reduce interest costs — try avalanche in Debt Planner.`,
+      actionPage: 'debt',
+      tone: 'caution',
+    });
+  }
+
+  const paymentEfficiency = getDebtPaymentEfficiencyRatio(data.debts);
+  const showSlowDebtPace =
+    !hasHighInterestWarning &&
+    data.debts.some((d) => d.balance > 0 && d.interestRate >= 10) &&
+    paymentEfficiency < 1.15 &&
+    custom.payoffMonths > 36;
+
+  if (showSlowDebtPace) {
+    recs.push({
+      id: 'slow-debt-payoff-pace',
+      priority: 'warning',
+      title: 'Current payment pace may keep debt active for years',
+      description:
+        'Payments are close to minimum levels on one or more balances. Increasing payments could significantly reduce interest costs and shorten your payoff timeline.',
+      actionPage: 'debt',
+      tone: 'caution',
+    });
+  } else if (custom.payoffMonths > 60 && data.debts.some((d) => d.balance > 0)) {
+    recs.push({
+      id: 'long-debt-timeline',
+      priority: 'warning',
+      title: 'Debt timeline stretches several years ahead',
+      description:
+        'At your current plan, balances may stay active for a long time. Even modest extra payments can move the payoff date earlier and lower total interest.',
       actionPage: 'debt',
       tone: 'caution',
     });
@@ -178,7 +212,7 @@ export function getRecommendations(
     });
   }
 
-  if (summary.monthlyLeftover > 500 && summary.monthlyLeftover > 0 && dti < 0.28) {
+  if (summary.monthlyLeftover > 500 && dti < 0.28) {
     recs.push({
       id: 'healthy-buffer',
       priority: 'healthy',
@@ -209,7 +243,12 @@ export function getRecommendations(
     });
   }
 
-  if (data.debts.some((d) => d.extraPayment === 0) && summary.monthlyLeftover > 200) {
+  if (
+    !hasHighInterestWarning &&
+    !showSlowDebtPace &&
+    data.debts.some((d) => d.extraPayment === 0) &&
+    summary.monthlyLeftover > 200
+  ) {
     recs.push({
       id: 'extra-debt',
       priority: 'opportunity',
