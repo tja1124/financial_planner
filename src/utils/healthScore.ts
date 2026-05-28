@@ -1,6 +1,15 @@
-import type { AppData, FinancialSummary, HealthScoreResult } from '../types';
+import type { AppData, Debt, FinancialSummary, HealthScoreResult } from '../types';
 import { simulateDebtStrategy } from './debtStrategies';
 import { computeEmergencyRunwayMonths } from './emergencyFund';
+
+/**
+ * Health scoring philosophy
+ * -------------------------
+ * Penalties exist so high-APR debt, long payoff timelines, and minimum-payment habits
+ * pull scores into a believable range — without shame-based UI or “doom scoring.”
+ * Bands are graduated and capped; strong cashflow, emergency savings, and savings
+ * consistency still reward users who are making real progress.
+ */
 
 function clamp(n: number, min = 0, max = 100): number {
   return Math.min(max, Math.max(min, n));
@@ -53,21 +62,102 @@ function scoreLeftover(income: number, leftover: number): number {
   return 10;
 }
 
-function scoreDebtUtilization(
+function monthlyDebtPayment(debt: Debt): number {
+  return debt.minimumPayment + debt.extraPayment;
+}
+
+/** Balance-weighted average APR across active debts. */
+function balanceWeightedApr(debts: Debt[]): number {
+  const active = debts.filter((d) => d.balance > 0);
+  const totalBalance = active.reduce((s, d) => s + d.balance, 0);
+  if (totalBalance <= 0) return 0;
+  return active.reduce((s, d) => s + d.interestRate * d.balance, 0) / totalBalance;
+}
+
+/**
+ * Compares actual monthly payment to the stated minimum (per debt), weighted by balance.
+ * ~1.0 ≈ minimum-only; higher values reflect accelerated payoff behavior.
+ */
+export function getDebtPaymentEfficiencyRatio(debts: Debt[]): number {
+  const active = debts.filter((d) => d.balance > 0);
+  const totalBalance = active.reduce((s, d) => s + d.balance, 0);
+  if (totalBalance <= 0) return 1.2;
+  const weighted = active.reduce((s, d) => {
+    const minimum = Math.max(d.minimumPayment, 1);
+    return s + (monthlyDebtPayment(d) / minimum) * d.balance;
+  }, 0);
+  return weighted / totalBalance;
+}
+
+/** Extra penalty for high-rate balances paid near the minimum (revolving-trap pattern). */
+function revolvingNearMinimumPenalty(debts: Debt[]): number {
+  let penalty = 0;
+  for (const d of debts) {
+    if (d.balance <= 0 || d.interestRate < 10) continue;
+    const pay = monthlyDebtPayment(d);
+    const monthlyInterest = d.balance * (d.interestRate / 100 / 12);
+
+    if (pay <= monthlyInterest * 1.12) penalty += 8;
+    else if (pay <= monthlyInterest * 1.25) penalty += 4;
+
+    if (d.interestRate >= 15 && pay < d.balance * 0.025) penalty += 6;
+    else if (d.interestRate >= 10 && pay < d.balance * 0.02) penalty += 4;
+  }
+  return Math.min(penalty, 22);
+}
+
+/**
+ * Debt quality: balance load, APR severity, payoff horizon, and payment efficiency.
+ * Penalties are additive but bounded so one weak area does not zero out the entire score.
+ */
+function scoreDebtQuality(
   income: number,
-  totalDebtBalance: number,
+  debts: Debt[],
   payoffMonths: number,
 ): number {
-  if (totalDebtBalance <= 0) return 100;
-  const annualIncome = income * 12;
-  if (annualIncome <= 0) return 30;
-  const ratio = totalDebtBalance / annualIncome;
+  const totalDebt = debts.reduce((s, d) => s + d.balance, 0);
+  if (totalDebt <= 0) return 100;
+
   let score = 100;
-  if (ratio > 0.5) score -= 35;
-  else if (ratio > 0.3) score -= 20;
-  else if (ratio > 0.15) score -= 8;
-  if (payoffMonths > 60) score -= 25;
-  else if (payoffMonths > 36) score -= 12;
+  const annualIncome = income * 12;
+
+  if (annualIncome <= 0) {
+    score -= 40;
+  } else {
+    const balanceToIncome = totalDebt / annualIncome;
+    if (balanceToIncome > 0.5) score -= 28;
+    else if (balanceToIncome > 0.3) score -= 16;
+    else if (balanceToIncome > 0.15) score -= 6;
+  }
+
+  const maxApr = Math.max(
+    ...debts.filter((d) => d.balance > 0).map((d) => d.interestRate),
+    0,
+  );
+  const weightedApr = balanceWeightedApr(debts);
+
+  if (maxApr > 18) score -= 12;
+  else if (maxApr > 10) score -= 5;
+
+  if (weightedApr > 15) score -= 8;
+  else if (weightedApr > 10) score -= 4;
+
+  if (payoffMonths > 120) score -= 28;
+  else if (payoffMonths > 60) score -= 20;
+  else if (payoffMonths > 36) score -= 10;
+  else if (payoffMonths <= 24) score += 4;
+
+  // Costly debt that will linger — common minimum-payment pattern
+  if (maxApr > 18 && payoffMonths > 48) score -= 6;
+
+  const paymentRatio = getDebtPaymentEfficiencyRatio(debts);
+  if (paymentRatio < 1.08) score -= 14;
+  else if (paymentRatio < 1.2) score -= 8;
+  else if (paymentRatio >= 1.6) score += 5;
+  else if (paymentRatio >= 1.35) score += 3;
+
+  score -= revolvingNearMinimumPenalty(debts);
+
   return clamp(score);
 }
 
@@ -109,44 +199,44 @@ export function computeHealthScore(
     runwayMonths != null && runwayMonths > 0
       ? efCurrent / runwayMonths
       : 0;
-  const totalDebt = data.debts.reduce((s, d) => s + d.balance, 0);
   const payoffMonths = simulateDebtStrategy(data.debts, 'custom').payoffMonths;
 
   const factors = [
     {
-      id: 'savings-rate',
-      label: 'Savings rate',
-      score: scoreSavingsRate(income, summary.totalMonthlySavingsContributions),
-      weight: 0.18,
-      description: 'Planned monthly savings vs income.',
+      id: 'leftover',
+      label: 'Cashflow buffer',
+      score: scoreLeftover(income, summary.monthlyLeftover),
+      weight: 0.24,
+      description: 'Monthly leftover after obligations.',
     },
     {
       id: 'emergency',
       label: 'Emergency runway',
       score: scoreEmergencyRunway(coreExpenses, efCurrent, efTarget),
-      weight: 0.2,
+      weight: 0.18,
       description: 'Months of core expenses covered by your emergency fund.',
+    },
+    {
+      id: 'debt-quality',
+      label: 'Debt quality',
+      score: scoreDebtQuality(income, data.debts, payoffMonths),
+      weight: 0.2,
+      description:
+        'Balance load, interest rates, payoff timeline, and payment pace vs minimums.',
     },
     {
       id: 'dti',
       label: 'Debt-to-income',
       score: scoreDebtToIncome(income, summary.totalMonthlyDebtPayments),
-      weight: 0.2,
+      weight: 0.16,
       description: 'Monthly debt payments relative to income.',
     },
     {
-      id: 'leftover',
-      label: 'Cashflow buffer',
-      score: scoreLeftover(income, summary.monthlyLeftover),
-      weight: 0.22,
-      description: 'Monthly leftover after obligations.',
-    },
-    {
-      id: 'debt-load',
-      label: 'Debt load',
-      score: scoreDebtUtilization(income, totalDebt, payoffMonths),
-      weight: 0.12,
-      description: 'Total debt balance and payoff timeline.',
+      id: 'savings-rate',
+      label: 'Savings rate',
+      score: scoreSavingsRate(income, summary.totalMonthlySavingsContributions),
+      weight: 0.14,
+      description: 'Planned monthly savings vs income.',
     },
     {
       id: 'stability',
